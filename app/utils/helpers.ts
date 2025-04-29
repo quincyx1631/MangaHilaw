@@ -10,7 +10,7 @@ export function formatDate(dateString: string): string {
  * Gets the cover image URL from the b2key
  */
 export function getCoverImageUrl(b2key: string): string {
-  return `https://meo.comick.pictures/${b2key}`
+  return `${process.env.NEXT_PUBLIC_IMG_URL}/${b2key}`
 }
 
 /**

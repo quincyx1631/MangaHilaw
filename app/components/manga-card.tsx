@@ -10,7 +10,7 @@ interface MangaCardProps {
 
 export function MangaCard({ manga }: MangaCardProps) {
   const getCoverImageUrl = (b2key: string) => {
-    return `https://meo.comick.pictures/${b2key}`;
+    return `${process.env.NEXT_PUBLIC_IMG_URL}/${b2key}`;
   };
 
   // Format date to "Apr 27" style
@@ -54,7 +54,7 @@ export function MangaCard({ manga }: MangaCardProps) {
   return (
     <Card className="overflow-hidden h-full rounded-lg border-0 bg-transparent">
       <Link
-        href={`/manga/${manga.md_comics?.slug || manga.id}`}
+        href={`/comic/${manga.md_comics?.slug || manga.id}`}
         className="block h-full relative group"
       >
         <div className="relative aspect-[3/4] overflow-hidden rounded-lg">

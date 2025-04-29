@@ -9,7 +9,7 @@ interface NewMangaItemProps {
 
 export function NewMangaItem({ manga }: NewMangaItemProps) {
   const getCoverImageUrl = (b2key: string) => {
-    return `https://meo.comick.pictures/${b2key}`;
+    return `${process.env.NEXT_PUBLIC_IMG_URL}/${b2key}`;
   };
 
   // Format date to "Apr 27" style
@@ -52,7 +52,7 @@ export function NewMangaItem({ manga }: NewMangaItemProps) {
 
   return (
     <Link
-      href={`/manga/${manga.md_comics?.slug || manga.id}`}
+      href={`/comic/${manga.md_comics?.slug || manga.id}`}
       className="flex gap-3 group p-2 rounded-lg transition-colors hover:bg-accent"
     >
       <div className="relative h-20 w-14 overflow-hidden rounded-md flex-shrink-0 border">
