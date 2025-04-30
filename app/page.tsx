@@ -2,17 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import { Book, Search, Menu } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Pagination,
   PaginationContent,
@@ -23,12 +13,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-
-// Import the components
 import { MangaCard } from "./components/manga-card";
 import { NewMangaItem } from "./components/new-manga-item";
-import { ThemeToggle } from "./components/theme-toggle";
 import type { MangaChapter } from "./types/manga";
 
 export default function HomePage() {
@@ -38,24 +24,9 @@ export default function HomePage() {
   const [hotManga, setHotManga] = useState<MangaChapter[]>([]);
   const [newManga, setNewManga] = useState<MangaChapter[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(10); // Default value
+  const [totalPages, setTotalPages] = useState(10);
   const [error, setError] = useState<string | null>(null);
   const itemsPerPage = 30;
-
-  const categories = [
-    "Action",
-    "Adventure",
-    "Comedy",
-    "Drama",
-    "Fantasy",
-    "Horror",
-    "Romance",
-    "Sci-Fi",
-    "Slice of Life",
-    "Sports",
-    "Mystery",
-    "Supernatural",
-  ];
 
   useEffect(() => {
     const fetchManga = async () => {
@@ -94,9 +65,6 @@ export default function HomePage() {
         const newData = await newResponse.json();
         console.log("New manga data received:", newData.length || "object");
         setNewManga(Array.isArray(newData) ? newData : [newData]);
-
-        // Set total pages based on response
-        // In a real app, you would get this from the API's pagination info
         setTotalPages(10);
       } catch (error) {
         console.error("Error fetching manga:", error);
@@ -199,80 +167,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 bg-background border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <Book className="h-6 w-6 text-primary" />
-              <span className="font-bold text-xl hidden sm:inline-block">
-                MangaHilaw
-              </span>
-            </Link>
-
-            <div className="hidden md:flex items-center gap-4 flex-1 max-w-md mx-4">
-              <div className="relative w-full">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search manga..." className="pl-8" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Add the theme toggle button */}
-              <ThemeToggle />
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    Categories
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {categories.map((category) => (
-                    <DropdownMenuItem key={category}>
-                      {category}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right">
-                  <div className="grid gap-4 py-4">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Search manga..." className="pl-8" />
-                    </div>
-                    <div className="grid gap-2">
-                      <h3 className="text-sm font-medium">Categories</h3>
-                      {categories.map((category) => (
-                        <Link
-                          key={category}
-                          href={`/category/${category.toLowerCase()}`}
-                          className="text-sm hover:underline"
-                        >
-                          {category}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </div>
-
-          <div className="mt-4 md:hidden relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search manga..." className="pl-8" />
-          </div>
-        </div>
-      </header>
-
       <main className="container mx-auto px-4 py-6">
         {/* Mobile New Releases - Only visible on small screens */}
         <div className="block md:hidden mb-6">

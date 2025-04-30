@@ -31,7 +31,16 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
-
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Chapter, ChapterImage } from "@/app/types/mangaInfo";
 
 interface Comment {
@@ -67,6 +76,10 @@ export default function ChapterReader() {
   const commentsRef = useRef<HTMLDivElement>(null);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
   const imgUrl = process.env.NEXT_PUBLIC_IMG_URL || "";
+  const [allChapters, setAllChapters] = useState<Chapter[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [availableGroups, setAvailableGroups] = useState<string[]>([]);
+  const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
 
   // Fetch chapter data
   useEffect(() => {
@@ -84,39 +97,145 @@ export default function ChapterReader() {
         const imagesData = await chapterImagesResponse.json();
         setChapterImages(imagesData);
 
-        // 2. Fetch the chapter list
+        // 2. Fetch the current chapter info to get group details
+        const currentChapterResponse = await fetch(`${baseUrl}/chapter/${hid}`);
+        if (!currentChapterResponse.ok)
+          throw new Error(`Failed to fetch current chapter info`);
+        const currentChapterData = await currentChapterResponse.json();
+        const currentChapter = currentChapterData.chapter;
+
+        const currentGroups = currentChapter.group_name || [];
+        const preferredGroup =
+          currentGroups.length > 0 ? currentGroups[0] : null;
+        setChapterTitle(`Chapter ${currentChapter.chap}`);
+
+        // 3. Fetch the manga info to get its hid
         const mangaResponse = await fetch(`${baseUrl}/comic/${slug}`);
         if (!mangaResponse.ok) throw new Error(`Failed to fetch manga info`);
-
         const mangaData = await mangaResponse.json();
+        const mangaHid = mangaData.comic.hid;
+
+        // 4. Fetch all chapters to have complete data for navigation
         const chaptersResponse = await fetch(
-          `${baseUrl}/comic/${mangaData.comic.hid}/chapters?chap-order=1&lang=en`
+          `${baseUrl}/comic/${mangaHid}/chapters?limit=100&chap-order=0&lang=en`
         );
         if (!chaptersResponse.ok)
           throw new Error(`Failed to fetch chapters list`);
 
         const chaptersData = await chaptersResponse.json();
         const chapters: Chapter[] = chaptersData.chapters;
+        setAllChapters(chapters);
+        setCurrentChapter(currentChapter);
 
-        // Find current chapter index using hid
-        const currentIndex = chapters.findIndex((c) => c.hid === hid);
+        const groups = new Set<string>();
+        chapters.forEach((chapter) => {
+          if (chapter.group_name && chapter.group_name.length > 0) {
+            chapter.group_name.forEach((group) => groups.add(group));
+          }
+        });
+        setAvailableGroups(Array.from(groups));
 
-        // Set previous and next chapter
-        if (currentIndex > 0) {
+        if (preferredGroup) {
+          setSelectedGroup(preferredGroup);
+        }
+
+        const sortedChapters = [...chapters].sort((a, b) => {
+          const chapA = parseFloat(a.chap) || 0;
+          const chapB = parseFloat(b.chap) || 0;
+          return chapA - chapB;
+        });
+
+        const currentIndex = sortedChapters.findIndex((c) => c.hid === hid);
+
+        if (currentIndex === -1) {
+          throw new Error("Current chapter not found in chapters list");
+        }
+
+        let prevChapterIndex = currentIndex - 1;
+        while (prevChapterIndex >= 0) {
+          const prevChapterCandidate = sortedChapters[prevChapterIndex];
+
+          if (
+            preferredGroup &&
+            prevChapterCandidate.group_name.includes(preferredGroup)
+          ) {
+            // Found a chapter with the same group
+            setPrevChapter({
+              chap: prevChapterCandidate.chap,
+              hid: prevChapterCandidate.hid,
+            });
+            break;
+          } else if (prevChapterIndex === currentIndex - 1) {
+            // If this is the immediate previous chapter, keep track of it as fallback
+            const fallbackPrev = {
+              chap: prevChapterCandidate.chap,
+              hid: prevChapterCandidate.hid,
+            };
+
+            // Only set as fallback if we don't find a preferred group
+            if (prevChapterIndex === 0) {
+              setPrevChapter(fallbackPrev);
+            }
+          }
+          prevChapterIndex--;
+        }
+
+        if (prevChapterIndex < 0 && currentIndex > 0) {
+          // Just use the immediate previous chapter if no match for preferred group
           setPrevChapter({
-            chap: chapters[currentIndex - 1].chap,
-            hid: chapters[currentIndex - 1].hid,
+            chap: sortedChapters[currentIndex - 1].chap,
+            hid: sortedChapters[currentIndex - 1].hid,
           });
-        } else {
+        } else if (currentIndex === 0) {
+          // If this is the first chapter, there is no previous chapter
           setPrevChapter(null);
         }
 
-        if (currentIndex < chapters.length - 1) {
+        // For next chapter navigation: look for chapters with preferred group
+        let nextChapterIndex = currentIndex + 1;
+        while (nextChapterIndex < sortedChapters.length) {
+          const nextChapterCandidate = sortedChapters[nextChapterIndex];
+
+          // If there's a preferred group, try to find the same group
+          if (
+            preferredGroup &&
+            nextChapterCandidate.group_name.includes(preferredGroup)
+          ) {
+            // Found a chapter with the same group
+            setNextChapter({
+              chap: nextChapterCandidate.chap,
+              hid: nextChapterCandidate.hid,
+            });
+            break;
+          } else if (nextChapterIndex === currentIndex + 1) {
+            // If this is the immediate next chapter, keep track of it as fallback
+            const fallbackNext = {
+              chap: nextChapterCandidate.chap,
+              hid: nextChapterCandidate.hid,
+            };
+
+            // Only set as fallback if we don't find a preferred group
+            if (nextChapterIndex === sortedChapters.length - 1) {
+              setNextChapter(fallbackNext);
+            }
+          }
+
+          nextChapterIndex++;
+        }
+
+        // If we couldn't find a next chapter with the preferred group,
+        // and we haven't set a fallback, set nextChapter to null
+        if (
+          nextChapterIndex >= sortedChapters.length &&
+          currentIndex < sortedChapters.length - 1
+        ) {
+          // Just use the immediate next chapter if no match for preferred group
           setNextChapter({
-            chap: chapters[currentIndex + 1].chap,
-            hid: chapters[currentIndex + 1].hid,
+            chap: sortedChapters[currentIndex + 1].chap,
+            hid: sortedChapters[currentIndex + 1].hid,
           });
-        } else {
+        } else if (currentIndex === sortedChapters.length - 1) {
+          // If this is the last chapter, there is no next chapter
           setNextChapter(null);
         }
       } catch (err) {
@@ -292,12 +411,98 @@ export default function ChapterReader() {
                   <SheetTitle>Chapter List</SheetTitle>
                 </SheetHeader>
                 <div className="py-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    View all chapters for this manga
-                  </p>
-                  <Link href={`/comic/${slug}`}>
-                    <Button className="w-full">Go to Chapter List</Button>
-                  </Link>
+                  {/* Current chapter info */}
+                  <div className="mb-4 p-3 bg-muted/30 rounded-md">
+                    <p className="font-bold">
+                      Chapter {chapterTitle.replace("Chapter ", "")}
+                    </p>
+                  </div>
+
+                  {/* Group filter selector */}
+                  {availableGroups.length > 1 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-medium mb-2">
+                        Filter by Group
+                      </p>
+                      <Select
+                        value={selectedGroup || "all"}
+                        onValueChange={(value) =>
+                          setSelectedGroup(value === "all" ? null : value)
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Groups</SelectLabel>
+                            <SelectItem value="all">All Groups</SelectItem>
+                            {availableGroups.map((group) => (
+                              <SelectItem key={group} value={group}>
+                                {group}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Chapter dropdown */}
+                  <div className="mb-4">
+                    <p className="text-sm font-medium mb-2">Select Chapter</p>
+                    <Select
+                      value={hid}
+                      onValueChange={(value) => {
+                        router.push(`/comic/${slug}/chapter/${value}`);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a chapter" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <ScrollArea className="h-80">
+                          <SelectGroup>
+                            <SelectLabel>Chapters</SelectLabel>
+                            {allChapters
+                              .filter(
+                                (chapter) =>
+                                  selectedGroup === null ||
+                                  (chapter.group_name &&
+                                    chapter.group_name.includes(selectedGroup))
+                              )
+                              .sort((a, b) => {
+                                const chapA = parseFloat(a.chap) || 0;
+                                const chapB = parseFloat(b.chap) || 0;
+                                return chapB - chapA; // Descending order (newest first)
+                              })
+                              .map((chapter) => (
+                                <SelectItem
+                                  key={chapter.hid}
+                                  value={chapter.hid}
+                                >
+                                  <div className="flex justify-between items-center w-full">
+                                    <span>Ch. {chapter.chap}</span>
+                                    {chapter.group_name &&
+                                      chapter.group_name.length > 0 && (
+                                        <span className="text-xs bg-accent/50 px-2 py-0.5 rounded-full ml-2">
+                                          {chapter.group_name[0]}
+                                        </span>
+                                      )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                          </SelectGroup>
+                        </ScrollArea>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="mt-6">
+                    <Link href={`/comic/${slug}`}>
+                      <Button className="w-full">Go to Manga Page</Button>
+                    </Link>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -364,7 +569,7 @@ export default function ChapterReader() {
             ))}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="">
             {chapterImages.map((image, index) => (
               <div key={index} className="relative w-full flex justify-center">
                 <Image
@@ -373,7 +578,7 @@ export default function ChapterReader() {
                   height={image.h}
                   alt={`Page ${index + 1}`}
                   className="max-w-full h-auto"
-                  priority={index < 3} // Prioritize loading first 3 images
+                  priority={index < 3}
                   quality={imageQuality}
                   loading={index < 5 ? "eager" : "lazy"}
                 />

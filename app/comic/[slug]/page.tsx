@@ -56,7 +56,7 @@ export default function MangaReader() {
       const mangaData: ComicResponse = await mangaResponse.json();
       const mangaHid = mangaData.comic.hid;
 
-      if (!mangaInfo) setMangaInfo(mangaData.comic); // set once
+      if (!mangaInfo) setMangaInfo(mangaData.comic);
 
       const chaptersResponse = await fetch(
         `${baseUrl}/comic/${mangaHid}/chapters?limit=10&page=${pageNum}&chap-order=${chapterOrder}&lang=en`
