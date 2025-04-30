@@ -9,7 +9,7 @@ interface NewMangaItemProps {
 
 export function NewMangaItem({ manga }: NewMangaItemProps) {
   const getCoverImageUrl = (b2key: string) => {
-    return `${process.env.NEXT_PUBLIC_IMG_URL}/${b2key}`;
+    return `/api/image/${b2key}`;
   };
 
   // Format date to "Apr 27" style

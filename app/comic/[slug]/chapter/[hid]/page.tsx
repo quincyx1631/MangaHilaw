@@ -75,7 +75,6 @@ export default function ChapterReader() {
   const topRef = useRef<HTMLDivElement>(null);
   const commentsRef = useRef<HTMLDivElement>(null);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
-  const imgUrl = process.env.NEXT_PUBLIC_IMG_URL || "";
   const [allChapters, setAllChapters] = useState<Chapter[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
@@ -90,7 +89,7 @@ export default function ChapterReader() {
       try {
         // 1. Fetch the chapter images
         const chapterImagesResponse = await fetch(
-          `${baseUrl}/chapter/${hid}/get_images`
+          `/api/manga/chapter/${hid}/get_images`
         );
         if (!chapterImagesResponse.ok)
           throw new Error(`Failed to fetch chapter images`);
@@ -98,7 +97,7 @@ export default function ChapterReader() {
         setChapterImages(imagesData);
 
         // 2. Fetch the current chapter info to get group details
-        const currentChapterResponse = await fetch(`${baseUrl}/chapter/${hid}`);
+        const currentChapterResponse = await fetch(`/api/manga/chapter/${hid}`);
         if (!currentChapterResponse.ok)
           throw new Error(`Failed to fetch current chapter info`);
         const currentChapterData = await currentChapterResponse.json();
@@ -110,14 +109,14 @@ export default function ChapterReader() {
         setChapterTitle(`Chapter ${currentChapter.chap}`);
 
         // 3. Fetch the manga info to get its hid
-        const mangaResponse = await fetch(`${baseUrl}/comic/${slug}`);
+        const mangaResponse = await fetch(`/api/manga/comic/${slug}`);
         if (!mangaResponse.ok) throw new Error(`Failed to fetch manga info`);
         const mangaData = await mangaResponse.json();
         const mangaHid = mangaData.comic.hid;
 
         // 4. Fetch all chapters to have complete data for navigation
         const chaptersResponse = await fetch(
-          `${baseUrl}/comic/${mangaHid}/chapters?limit=100&chap-order=0&lang=en`
+          `/api/manga/comic/${mangaHid}/chapters?limit=100&chap-order=0&lang=en`
         );
         if (!chaptersResponse.ok)
           throw new Error(`Failed to fetch chapters list`);
@@ -352,7 +351,7 @@ export default function ChapterReader() {
 
   // Construct image URL from b2key
   const getImageUrl = (image: ChapterImage) => {
-    return `${imgUrl}/${image.b2key}`;
+    return `/api/image/${image.b2key}`;
   };
 
   if (error) {

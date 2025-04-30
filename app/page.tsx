@@ -37,8 +37,7 @@ export default function HomePage() {
         // Try fetching directly from the external API first
         console.log("Fetching hot manga data...");
         const hotResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/chapter/?page=${currentPage}&order=hot&limit=${itemsPerPage}`,
-          { cache: "no-store" }
+          `/api/manga/chapter/?page=${currentPage}&order=hot&limit=${itemsPerPage}`
         );
 
         if (!hotResponse.ok) {
@@ -52,10 +51,7 @@ export default function HomePage() {
         // Fetch new manga
         console.log("Fetching new manga data...");
         const newResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/chapter/?page=1&order=new&limit=10`,
-          {
-            cache: "no-store",
-          }
+          `/api/manga/chapter/?page=1&order=new&limit=10`
         );
 
         if (!newResponse.ok) {

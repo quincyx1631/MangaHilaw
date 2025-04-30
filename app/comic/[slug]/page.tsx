@@ -34,8 +34,6 @@ export default function MangaReader() {
   const [error, setError] = useState<string | null>(null);
   const [totalChapters, setTotalChapters] = useState(0);
   const { slug } = useParams() as { slug: string };
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
-  const imgUrl = process.env.NEXT_PUBLIC_IMG_URL || "";
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchGroup, setSearchGroup] = useState("");
@@ -48,7 +46,7 @@ export default function MangaReader() {
     setError(null);
 
     try {
-      const mangaResponse = await fetch(`${baseUrl}/comic/${slug}`);
+      const mangaResponse = await fetch(`/api/manga/comic/${slug}`);
       if (!mangaResponse.ok) {
         throw new Error(`Failed to fetch manga info: ${mangaResponse.status}`);
       }
@@ -59,7 +57,7 @@ export default function MangaReader() {
       if (!mangaInfo) setMangaInfo(mangaData.comic);
 
       const chaptersResponse = await fetch(
-        `${baseUrl}/comic/${mangaHid}/chapters?limit=10&page=${pageNum}&chap-order=${chapterOrder}&lang=en`
+        `/api/manga/comic/${mangaHid}/chapters?limit=10&page=${pageNum}&chap-order=${chapterOrder}&lang=en`
       );
 
       if (!chaptersResponse.ok) {
@@ -167,7 +165,7 @@ export default function MangaReader() {
     if (!covers || covers.length === 0)
       return "/placeholder.svg?height=911&width=629";
     const cover = covers[0];
-    return `${imgUrl}/${cover.b2key}`;
+    return `/api/image/${cover.b2key}`;
   };
 
   const getGenres = (genreData: MangaGenre[]) => {
