@@ -9,16 +9,6 @@ interface MangaCardProps {
 }
 
 export function MangaCard({ manga }: MangaCardProps) {
-  const getCoverImageUrl = (b2key: string) => {
-    return `/api/image/${b2key}`;
-  };
-
-  // Format date to "Apr 27" style
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
-
   // Get status text based on status code
   const getStatusText = (statusCode: number) => {
     switch (statusCode) {
@@ -51,6 +41,15 @@ export function MangaCard({ manga }: MangaCardProps) {
     }
   };
 
+  // Format date to "Apr 27" style
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const coverKey = manga.md_comics?.md_covers?.[0]?.b2key;
+  const coverUrl = coverKey ? `/api/image/${coverKey}` : "/placeholder.svg";
+
   return (
     <Card className="overflow-hidden h-full rounded-lg border-0 bg-transparent">
       <Link
@@ -58,17 +57,16 @@ export function MangaCard({ manga }: MangaCardProps) {
         className="block h-full relative group"
       >
         <div className="relative aspect-[3/4] overflow-hidden rounded-lg">
-          {manga.md_comics?.md_covers?.[0]?.b2key ? (
+          {coverKey ? (
             <div className="relative w-full h-full">
               <Image
-                src={
-                  getCoverImageUrl(manga.md_comics.md_covers[0].b2key) ||
-                  "/placeholder.svg"
-                }
+                src={coverUrl}
                 alt={manga.md_comics?.title || "Manga cover"}
                 fill
                 className="object-cover transition-transform group-hover:scale-105"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                priority={false}
+                loading="lazy"
               />
 
               {/* Status badge */}

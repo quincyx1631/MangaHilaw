@@ -166,7 +166,7 @@ export default function HomePage() {
       <main className="container mx-auto px-4 py-6">
         {/* Mobile New Releases - Only visible on small screens */}
         <div className="block md:hidden mb-6">
-          <h2 className="text-xl font-bold mb-4">New Releases</h2>
+          <h2 className="text-2xl font-bold mb-4">New Releases</h2>
           {error ? (
             <div className="p-4 text-center">
               <p className="text-destructive text-sm">
@@ -276,7 +276,7 @@ export default function HomePage() {
           {/* Desktop New Releases - Only visible on medium screens and up */}
           <div className="hidden md:block md:col-span-3">
             <div className="sticky top-[5rem]">
-              <h2 className="text-xl font-bold mb-4">New Releases</h2>
+              <h2 className="text-2xl font-bold mb-4">New Releases</h2>
 
               {error ? (
                 <div className="p-4 text-center">
