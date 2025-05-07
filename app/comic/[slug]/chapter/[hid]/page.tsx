@@ -80,7 +80,6 @@ export default function ChapterReader() {
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
   const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
 
-  // Fetch chapter data
   useEffect(() => {
     const fetchChapterData = async () => {
       setLoading(true);
@@ -250,7 +249,6 @@ export default function ChapterReader() {
     }
   }, [slug, hid, baseUrl]);
 
-  // Auto-hide controls after inactivity
   useEffect(() => {
     let timeout: NodeJS.Timeout;
 
@@ -263,12 +261,10 @@ export default function ChapterReader() {
       }, 3000);
     };
 
+    handleActivity();
     window.addEventListener("mousemove", handleActivity);
     window.addEventListener("touchstart", handleActivity);
     window.addEventListener("scroll", handleActivity);
-
-    // Initial timeout
-    handleActivity();
 
     return () => {
       window.removeEventListener("mousemove", handleActivity);
@@ -278,10 +274,8 @@ export default function ChapterReader() {
     };
   }, []);
 
-  // Smooth scroll implementation
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";
-
     return () => {
       document.documentElement.style.scrollBehavior = "auto";
     };
@@ -349,7 +343,6 @@ export default function ChapterReader() {
     return Math.floor(seconds) + " seconds ago";
   };
 
-  // Construct image URL from b2key
   const getImageUrl = (image: ChapterImage) => {
     return `/api/image/${image.b2key}`;
   };

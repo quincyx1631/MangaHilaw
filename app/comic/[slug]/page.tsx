@@ -205,229 +205,215 @@ export default function MangaReader() {
       {loading ? (
         <MangaInfoSkeleton />
       ) : (
-        mangaInfo && (
-          <>
-            {/* Manga Info Section */}
-            <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-6 md:mb-8">
-              <div
-                className="w-full md:w-1/3 lg:w-1/4 flex-shrink-0 mx-auto md:mx-0"
-                style={{ maxWidth: "250px" }}
-              >
-                <div className="relative aspect-[629/911] w-full rounded-lg overflow-hidden shadow-lg">
-                  <Image
-                    src={
-                      getCoverImage(mangaInfo.md_covers) || "/placeholder.svg"
-                    }
-                    alt={mangaInfo.title}
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-              </div>
-
-              <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold mb-2 mt-3 md:mt-0 text-center md:text-left">
-                  {mangaInfo.title}
-                </h1>
-
-                <div className="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2 mb-4">
-                  {getGenres(mangaInfo.md_comic_md_genres).map(
-                    (genre, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {genre.name}
-                      </Badge>
-                    )
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6 text-center md:text-left">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mx-auto md:mx-0" />
-                    <span className="text-xs sm:text-sm">
-                      <span className="font-medium">Status:</span>{" "}
-                      {getStatusText(mangaInfo.status)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <BookMarked className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mx-auto md:mx-0" />
-                    <span className="text-xs sm:text-sm">
-                      <span className="font-medium">Chapters:</span>{" "}
-                      {mangaInfo.chapter_count}
-                    </span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mx-auto md:mx-0" />
-                    <span className="text-xs sm:text-sm">
-                      <span className="font-medium">Followers:</span>{" "}
-                      {mangaInfo.user_follow_count.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mb-4 sm:mb-6">
-                  <h2 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 text-center md:text-left">
-                    Synopsis
-                  </h2>
-                  <p className="text-sm text-muted-foreground line-clamp-4 sm:line-clamp-none">
-                    {mangaInfo.desc}
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                  <Button className="w-full sm:w-auto">
-                    Read First Chapter
-                  </Button>
-                  <Button variant="outline" className="w-full sm:w-auto">
-                    Read Latest Chapter
-                  </Button>
-                </div>
+        <>
+          {/* Manga Info Section */}
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-6 md:mb-8">
+            <div
+              className="w-full md:w-1/3 lg:w-1/4 flex-shrink-0 mx-auto md:mx-0"
+              style={{ maxWidth: "250px" }}
+            >
+              <div className="relative aspect-[629/911] w-full rounded-lg overflow-hidden shadow-lg">
+                <Image
+                  src={getCoverImage(mangaInfo.md_covers) || "/placeholder.svg"}
+                  alt={mangaInfo.title}
+                  fill
+                  className="object-cover"
+                  priority
+                />
               </div>
             </div>
 
-            {/* Chapter List Section */}
-            <div>
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <h2 className="text-xl sm:text-2xl font-bold">Chapters</h2>
-                <div className="text-xs sm:text-sm text-muted-foreground">
-                  {chapters.length} of {totalChapters} chapters
-                </div>
-              </div>
+            <div className="flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2 mt-3 md:mt-0 text-center md:text-left">
+                {mangaInfo.title}
+              </h1>
 
-              <div className="mb-4">
-                <div className="flex flex-col sm:flex-row gap-3 mb-3">
-                  <div className="flex-1">
-                    <input
-                      type="text"
-                      placeholder="Search by chapter number..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <select
-                      value={searchGroup}
-                      onChange={(e) => setSearchGroup(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    >
-                      <option value="">All Scanlation Groups</option>
-                      {uniqueGroups.map((group) => (
-                        <option key={group} value={group}>
-                          {group}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex-none">
-                    <Button
-                      variant="outline"
-                      onClick={handleOrderChange}
-                      className="w-full sm:w-auto h-full flex items-center gap-2"
-                    >
-                      {chapterOrder === 0 ? (
-                        <>
-                          Newest First{" "}
-                          <ChevronRight className="h-4 w-4 rotate-90" />
-                        </>
-                      ) : (
-                        <>
-                          Oldest First{" "}
-                          <ChevronRight className="h-4 w-4 -rotate-90" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-                {(searchTerm || searchGroup) && (
-                  <div className="flex justify-between items-center text-sm">
-                    <div>Found {filteredChapters.length} chapter(s)</div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setSearchGroup("");
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2 sm:space-y-3">
-                {filteredChapters.map((chapter) => (
-                  <Link
-                    key={chapter.id}
-                    href={`/comic/${mangaInfo.slug}/chapter/${chapter.hid}`}
-                    className="block"
-                  >
-                    <Card className="transition-colors hover:bg-muted/50">
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                            <div className="font-bold text-base sm:text-lg">
-                              Ch. {chapter.chap}
-                            </div>
-                            <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                              {formatDate(chapter.publish_at)}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-                              <Calendar className="h-3 w-3 sm:hidden" />
-                              <span className="sm:hidden">
-                                {formatDateShort(chapter.publish_at)}
-                              </span>
-                              <ThumbsUp className="h-3 w-3 sm:h-4 sm:w-4 ml-2 sm:ml-0" />
-                              {chapter.up_count}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 sm:gap-2">
-                            <Badge
-                              variant="outline"
-                              className="text-xs px-1.5 py-0 sm:px-2 sm:py-0.5"
-                            >
-                              {chapter.group_name[0]}
-                            </Badge>
-                            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+              <div className="flex flex-wrap justify-center md:justify-start gap-1.5 sm:gap-2 mb-4">
+                {getGenres(mangaInfo.md_comic_md_genres).map((genre, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    {genre.name}
+                  </Badge>
                 ))}
               </div>
 
-              {filteredChapters.length === 0 && (searchTerm || searchGroup) && (
-                <div className="py-8 text-center">
-                  <p className="text-muted-foreground">
-                    No chapters match your search criteria.
-                  </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6 text-center md:text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mx-auto md:mx-0" />
+                  <span className="text-xs sm:text-sm">
+                    <span className="font-medium">Status:</span>{" "}
+                    {getStatusText(mangaInfo.status)}
+                  </span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <BookMarked className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mx-auto md:mx-0" />
+                  <span className="text-xs sm:text-sm">
+                    <span className="font-medium">Chapters:</span>{" "}
+                    {mangaInfo.chapter_count}
+                  </span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mx-auto md:mx-0" />
+                  <span className="text-xs sm:text-sm">
+                    <span className="font-medium">Followers:</span>{" "}
+                    {mangaInfo.user_follow_count.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 text-center md:text-left">
+                  Synopsis
+                </h2>
+                <p className="text-sm text-muted-foreground line-clamp-4 sm:line-clamp-none">
+                  {mangaInfo.desc}
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <Button className="w-full sm:w-auto">Read First Chapter</Button>
+                <Button variant="outline" className="w-full sm:w-auto">
+                  Read Latest Chapter
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Chapter List Section */}
+          <div>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold">Chapters</h2>
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                {chapters.length} of {totalChapters} chapters
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <div className="flex flex-col sm:flex-row gap-3 mb-3">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search by chapter number..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+                <div className="flex-1">
+                  <select
+                    value={searchGroup}
+                    onChange={(e) => setSearchGroup(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    <option value="">All Scanlation Groups</option>
+                    {uniqueGroups.map((group) => (
+                      <option key={group} value={group}>
+                        {group}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-none">
+                  <Button
+                    variant="outline"
+                    onClick={handleOrderChange}
+                    className="w-full sm:w-auto h-full flex items-center gap-2"
+                  >
+                    {chapterOrder === 0 ? (
+                      <>
+                        Newest First{" "}
+                        <ChevronRight className="h-4 w-4 rotate-90" />
+                      </>
+                    ) : (
+                      <>
+                        Oldest First{" "}
+                        <ChevronRight className="h-4 w-4 -rotate-90" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              {(searchTerm || searchGroup) && (
+                <div className="flex justify-between items-center text-sm">
+                  <div>Found {filteredChapters.length} chapter(s)</div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSearchGroup("");
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
                 </div>
               )}
-
-              {chapters.length < totalChapters &&
-                !searchTerm &&
-                !searchGroup && (
-                  <div className="mt-4 sm:mt-6 text-center">
-                    <Button
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                      onClick={handleLoadMore}
-                      disabled={loading}
-                    >
-                      {loading ? "Loading..." : "Load More Chapters"}
-                    </Button>
-                  </div>
-                )}
             </div>
-          </>
-        )
+
+            <div className="space-y-2 sm:space-y-3">
+              {filteredChapters.map((chapter) => (
+                <Link
+                  key={chapter.id}
+                  href={`/comic/${mangaInfo.slug}/chapter/${chapter.hid}`}
+                  className="block"
+                >
+                  <Card className="transition-colors hover:bg-muted/50">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                          <div className="font-bold text-base sm:text-lg">
+                            Ch. {chapter.chap}
+                          </div>
+                          <div className="hidden sm:flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                            {formatDate(chapter.publish_at)}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
+                            <Calendar className="h-3 w-3 sm:hidden" />
+                            <span className="sm:hidden">
+                              {formatDateShort(chapter.publish_at)}
+                            </span>
+                            <ThumbsUp className="h-3 w-3 sm:h-4 sm:w-4 ml-2 sm:ml-0" />
+                            {chapter.up_count}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <Badge
+                            variant="outline"
+                            className="text-xs px-1.5 py-0 sm:px-2 sm:py-0.5"
+                          >
+                            {chapter.group_name[0]}
+                          </Badge>
+                          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+
+            {filteredChapters.length === 0 && (searchTerm || searchGroup) && (
+              <div className="py-8 text-center">
+                <p className="text-muted-foreground">
+                  No chapters match your search criteria.
+                </p>
+              </div>
+            )}
+
+            {chapters.length < totalChapters && !searchTerm && !searchGroup && (
+              <div className="mt-4 sm:mt-6 text-center">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={handleLoadMore}
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : "Load More Chapters"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
