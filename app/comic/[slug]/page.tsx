@@ -66,7 +66,10 @@ export default function MangaReader() {
 
       const chaptersData: ChapterResponse = await chaptersResponse.json();
 
-      // Append if not first page
+      if (chaptersData.chapters.length === 0) {
+        setError("No chapters found.");
+        return;
+      }
       setChapters((prev) =>
         pageNum === 1
           ? chaptersData.chapters
@@ -92,7 +95,6 @@ export default function MangaReader() {
   }, [slug, chapterOrder]);
 
   useEffect(() => {
-    // Filter chapters based on search terms
     const filtered = chapters.filter((chapter) => {
       const matchesChapter = searchTerm
         ? chapter.chap.toLowerCase().includes(searchTerm.toLowerCase())
@@ -109,7 +111,6 @@ export default function MangaReader() {
 
     setFilteredChapters(filtered);
 
-    // Extract unique groups from all chapters
     const groups = new Set<string>();
     chapters.forEach((chapter) => {
       chapter.group_name.forEach((group) => {
@@ -135,7 +136,6 @@ export default function MangaReader() {
     });
   };
 
-  // For mobile, we'll use a shorter date format
   const formatDateShort = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -171,7 +171,10 @@ export default function MangaReader() {
   const getGenres = (genreData: MangaGenre[]) => {
     if (!genreData) return [];
     return genreData.map((item) => ({
-      name: item.md_genres.name,
+      name:
+        typeof item.md_genres?.name === "string"
+          ? item.md_genres.name
+          : "Unknown",
     }));
   };
 
@@ -183,6 +186,7 @@ export default function MangaReader() {
     fetchMangaData(1);
   };
 
+  if (loading) return <MangaInfoSkeleton />;
   if (error) {
     return (
       <div className="container mx-auto px-3 py-8 text-center">
@@ -194,6 +198,7 @@ export default function MangaReader() {
       </div>
     );
   }
+  if (!mangaInfo) return null;
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-6xl">
