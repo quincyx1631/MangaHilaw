@@ -92,6 +92,13 @@ export default function MangaReader() {
       setChapters([]);
       fetchMangaData(1);
     }
+
+    return () => {
+      setMangaInfo(null);
+      setChapters([]);
+      setFilteredChapters([]);
+      setUniqueGroups([]);
+    };
   }, [slug, chapterOrder]);
 
   useEffect(() => {

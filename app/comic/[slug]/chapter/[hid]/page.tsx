@@ -247,6 +247,16 @@ export default function ChapterReader() {
     if (slug && hid) {
       fetchChapterData();
     }
+    return () => {
+      setChapterImages([]);
+      setChapterTitle("");
+      setNextChapter(null);
+      setPrevChapter(null);
+      setCurrentChapter(null);
+      setAllChapters([]);
+      setSelectedGroup(null);
+      setAvailableGroups([]);
+    };
   }, [slug, hid, baseUrl]);
 
   useEffect(() => {

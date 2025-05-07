@@ -27,10 +27,6 @@ export default function Header() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchMobileContainerRef = useRef<HTMLDivElement>(null);
 
-  if (pathname?.match(/^\/comic\/[^/]+\/chapter\/[^/]+$/)) {
-    return null;
-  }
-
   const fetchSearchResults = useCallback(async (query: string) => {
     setIsLoading(true);
     try {
@@ -220,6 +216,10 @@ export default function Header() {
       </>
     );
   };
+
+  if (pathname?.match(/^\/comic\/[^/]+\/chapter\/[^/]+$/)) {
+    return null;
+  }
 
   return (
     <>
