@@ -435,6 +435,8 @@ export default function BrowsePage() {
         return "Manhwa";
       case "cn":
         return "Manhua";
+      case "gb":
+        return "Webtoon";
       default:
         return "International";
     }
@@ -503,82 +505,51 @@ export default function BrowsePage() {
 
                 <ScrollArea className="h-[calc(100vh-220px)]">
                   <div className="pr-4 space-y-6">
-                    {/* Release Year */}
-                    <Accordion type="single" collapsible defaultValue="year">
-                      <AccordionItem value="year">
+                    {/* Sort */}
+                    <Accordion type="single" collapsible defaultValue="sort">
+                      <AccordionItem value="sort">
                         <AccordionTrigger className="text-sm font-semibold">
                           <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            RELEASE YEAR
+                            <span className="h-4 w-4 flex items-center justify-center text-xs">
+                              ⏬
+                            </span>
+                            SORT BY
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
                           <RadioGroup
-                            value={
-                              filters.from ? filters.from.toString() : "all"
-                            }
-                            onValueChange={(value) => {
-                              if (value === "all") {
-                                handleYearChange(undefined, undefined);
-                              } else {
-                                handleYearChange(
-                                  Number.parseInt(value),
-                                  undefined
-                                );
-                              }
-                            }}
+                            value={filters.sort || "created_at"}
+                            onValueChange={(value) => handleSortChange(value)}
                           >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="all" id="all-years" />
-                              <Label htmlFor="all-years">All Years</Label>
+                            <div className="flex items-center space-x-2 ">
+                              <RadioGroupItem
+                                value="created_at"
+                                id="sort-created_at"
+                              />
+                              <Label htmlFor="sort-created_at">
+                                Newest Added
+                              </Label>
                             </div>
                             <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2025" id="r-2025" />
-                              <Label htmlFor="r-2025">2025</Label>
+                              <RadioGroupItem
+                                value="uploaded"
+                                id="sort-uploaded"
+                              />
+                              <Label htmlFor="sort-uploaded">
+                                Latest Update
+                              </Label>
                             </div>
                             <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2024" id="r-2024" />
-                              <Label htmlFor="r-2024">2024</Label>
+                              <RadioGroupItem value="view" id="sort-view" />
+                              <Label htmlFor="sort-view">Most Viewed</Label>
                             </div>
                             <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2023" id="r-2023" />
-                              <Label htmlFor="r-2023">2023</Label>
+                              <RadioGroupItem value="rating" id="sort-rating" />
+                              <Label htmlFor="sort-rating">Rating</Label>
                             </div>
                             <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2022" id="r-2022" />
-                              <Label htmlFor="r-2022">2022</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2021" id="r-2021" />
-                              <Label htmlFor="r-2021">2021</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2020" id="r-2020" />
-                              <Label htmlFor="r-2020">2020</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2015" id="r-2015" />
-                              <Label htmlFor="r-2015">2015-2019</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2010" id="r-2010" />
-                              <Label htmlFor="r-2010">2010-2014</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2000" id="r-2000" />
-                              <Label htmlFor="r-2000">2000-2009</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="1990" id="r-1990" />
-                              <Label htmlFor="r-1990">1990-1999</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="1980" id="r-1980" />
-                              <Label htmlFor="r-1980">1980-1989</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="1970" id="r-1970" />
-                              <Label htmlFor="r-1970">Before 1980</Label>
+                              <RadioGroupItem value="follow" id="sort-follow" />
+                              <Label htmlFor="sort-follow">Follow Count</Label>
                             </div>
                           </RadioGroup>
                         </AccordionContent>
@@ -639,52 +610,6 @@ export default function BrowsePage() {
                               </Label>
                             </div>
                           </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-
-                    {/* Content Rating */}
-                    <Accordion type="single" collapsible defaultValue="content">
-                      <AccordionItem value="content">
-                        <AccordionTrigger className="text-sm font-semibold">
-                          <div className="flex items-center gap-2">
-                            <span className="h-4 w-4 flex items-center justify-center text-xs">
-                              🔞
-                            </span>
-                            CONTENT RATING
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <RadioGroup
-                            value={filters.content_rating || "all"}
-                            onValueChange={(value) => {
-                              if (value === "all") {
-                                handleContentRatingChange(undefined);
-                              } else {
-                                handleContentRatingChange(value);
-                              }
-                            }}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="all" id="all-content" />
-                              <Label htmlFor="all-content">All</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="safe" id="safe" />
-                              <Label htmlFor="safe">Safe</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem
-                                value="suggestive"
-                                id="suggestive"
-                              />
-                              <Label htmlFor="suggestive">Suggestive</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="erotica" id="erotica" />
-                              <Label htmlFor="erotica">Erotica</Label>
-                            </div>
-                          </RadioGroup>
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
@@ -795,52 +720,8 @@ export default function BrowsePage() {
                       </AccordionItem>
                     </Accordion>
 
-                    {/* Sort */}
-                    <Accordion type="single" collapsible defaultValue="sort">
-                      <AccordionItem value="sort">
-                        <AccordionTrigger className="text-sm font-semibold">
-                          <div className="flex items-center gap-2">
-                            <span className="h-4 w-4 flex items-center justify-center text-xs">
-                              ⏬
-                            </span>
-                            SORT BY
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <RadioGroup
-                            value={filters.sort || "latest"}
-                            onValueChange={(value) => handleSortChange(value)}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="latest" id="sort-latest" />
-                              <Label htmlFor="sort-latest">Latest Update</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="newest" id="sort-newest" />
-                              <Label htmlFor="sort-newest">Newest Added</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem
-                                value="popular"
-                                id="sort-popular"
-                              />
-                              <Label htmlFor="sort-popular">Popular</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="rating" id="sort-rating" />
-                              <Label htmlFor="sort-rating">Rating</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="follow" id="sort-follow" />
-                              <Label htmlFor="sort-follow">Follow Count</Label>
-                            </div>
-                          </RadioGroup>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-
                     {/* Genres */}
-                    <Accordion type="single" collapsible defaultValue="genres">
+                    <Accordion type="single" collapsible>
                       <AccordionItem value="genres">
                         <AccordionTrigger className="text-sm font-semibold">
                           <div className="flex items-center gap-2">
@@ -973,6 +854,122 @@ export default function BrowsePage() {
                               </div>
                             ))}
                           </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+
+                    {/* Release Year */}
+                    <Accordion type="single" collapsible defaultValue="year">
+                      <AccordionItem value="year">
+                        <AccordionTrigger className="text-sm font-semibold">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            RELEASE YEAR
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <RadioGroup
+                            value={
+                              filters.from ? filters.from.toString() : "all"
+                            }
+                            onValueChange={(value) => {
+                              if (value === "all") {
+                                handleYearChange(undefined, undefined);
+                              } else {
+                                handleYearChange(
+                                  Number.parseInt(value),
+                                  undefined
+                                );
+                              }
+                            }}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="all" id="all-years" />
+                              <Label htmlFor="all-years">All Years</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2025" id="r-2025" />
+                              <Label htmlFor="r-2025">2025</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2024" id="r-2024" />
+                              <Label htmlFor="r-2024">2024</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2023" id="r-2023" />
+                              <Label htmlFor="r-2023">2023</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2022" id="r-2022" />
+                              <Label htmlFor="r-2022">2022</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2021" id="r-2021" />
+                              <Label htmlFor="r-2021">2021</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2020" id="r-2020" />
+                              <Label htmlFor="r-2020">2020</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2015" id="r-2015" />
+                              <Label htmlFor="r-2015">2015-2019</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2010" id="r-2010" />
+                              <Label htmlFor="r-2010">2010-2014</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="2000" id="r-2000" />
+                              <Label htmlFor="r-2000">Before 2000</Label>
+                            </div>
+                          </RadioGroup>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+
+                    {/* Content Rating */}
+                    <Accordion type="single" collapsible defaultValue="content">
+                      <AccordionItem value="content">
+                        <AccordionTrigger className="text-sm font-semibold">
+                          <div className="flex items-center gap-2">
+                            <span className="h-4 w-4 flex items-center justify-center text-xs">
+                              🔞
+                            </span>
+                            CONTENT RATING
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <RadioGroup
+                            value={filters.content_rating || "all"}
+                            onValueChange={(value) => {
+                              if (value === "all") {
+                                handleContentRatingChange(undefined);
+                              } else {
+                                handleContentRatingChange(value);
+                              }
+                            }}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="all" id="all-content" />
+                              <Label htmlFor="all-content">All</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="safe" id="safe" />
+                              <Label htmlFor="safe">Safe</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem
+                                value="suggestive"
+                                id="suggestive"
+                              />
+                              <Label htmlFor="suggestive">Suggestive</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <RadioGroupItem value="erotica" id="erotica" />
+                              <Label htmlFor="erotica">Erotica</Label>
+                            </div>
+                          </RadioGroup>
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
@@ -1278,6 +1275,17 @@ export default function BrowsePage() {
                                   </span>
                                 )}
                               </div>
+                              <div className="flex items-center justify-between mt-1">
+                                <span className="text-xs text-gray-300 flex items-center">
+                                  {manga.follow_count &&
+                                    `${manga.follow_count.toLocaleString()} follows`}
+                                </span>
+                                {manga.year && (
+                                  <span className="text-xs text-gray-300">
+                                    {manga.year}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </a>
                         </Card>
@@ -1359,7 +1367,7 @@ export default function BrowsePage() {
                                 {manga.desc || "No description available."}
                               </p>
 
-                              <div className="flex items-center text-xs text-muted-foreground gap-4">
+                              <div className="flex items-center text-xs text-muted-foreground gap-4 flex-wrap">
                                 <span className="flex items-center gap-1">
                                   <Book className="h-3 w-3" /> Ch.{" "}
                                   {manga.last_chapter || "?"}
@@ -1370,6 +1378,19 @@ export default function BrowsePage() {
                                     manga.uploaded_at
                                   ).toLocaleDateString()}
                                 </span>
+                                {manga.follow_count && (
+                                  <span className="flex items-center gap-1">
+                                    <CheckCircle className="h-3 w-3" />{" "}
+                                    {manga.follow_count.toLocaleString()}{" "}
+                                    follows
+                                  </span>
+                                )}
+                                {manga.view_count > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="h-3 w-3">👁️</span>{" "}
+                                    {manga.view_count.toLocaleString()} views
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </a>
