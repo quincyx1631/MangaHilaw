@@ -17,6 +17,7 @@ import {
   Home,
   List,
   ThumbsUp,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -157,20 +158,17 @@ export default function ChapterReader() {
             preferredGroup &&
             prevChapterCandidate.group_name.includes(preferredGroup)
           ) {
-            // Found a chapter with the same group
             setPrevChapter({
               chap: prevChapterCandidate.chap,
               hid: prevChapterCandidate.hid,
             });
             break;
           } else if (prevChapterIndex === currentIndex - 1) {
-            // If this is the immediate previous chapter, keep track of it as fallback
             const fallbackPrev = {
               chap: prevChapterCandidate.chap,
               hid: prevChapterCandidate.hid,
             };
 
-            // Only set as fallback if we don't find a preferred group
             if (prevChapterIndex === 0) {
               setPrevChapter(fallbackPrev);
             }
@@ -179,40 +177,33 @@ export default function ChapterReader() {
         }
 
         if (prevChapterIndex < 0 && currentIndex > 0) {
-          // Just use the immediate previous chapter if no match for preferred group
           setPrevChapter({
             chap: sortedChapters[currentIndex - 1].chap,
             hid: sortedChapters[currentIndex - 1].hid,
           });
         } else if (currentIndex === 0) {
-          // If this is the first chapter, there is no previous chapter
           setPrevChapter(null);
         }
 
-        // For next chapter navigation: look for chapters with preferred group
         let nextChapterIndex = currentIndex + 1;
         while (nextChapterIndex < sortedChapters.length) {
           const nextChapterCandidate = sortedChapters[nextChapterIndex];
 
-          // If there's a preferred group, try to find the same group
           if (
             preferredGroup &&
             nextChapterCandidate.group_name.includes(preferredGroup)
           ) {
-            // Found a chapter with the same group
             setNextChapter({
               chap: nextChapterCandidate.chap,
               hid: nextChapterCandidate.hid,
             });
             break;
           } else if (nextChapterIndex === currentIndex + 1) {
-            // If this is the immediate next chapter, keep track of it as fallback
             const fallbackNext = {
               chap: nextChapterCandidate.chap,
               hid: nextChapterCandidate.hid,
             };
 
-            // Only set as fallback if we don't find a preferred group
             if (nextChapterIndex === sortedChapters.length - 1) {
               setNextChapter(fallbackNext);
             }
@@ -221,19 +212,15 @@ export default function ChapterReader() {
           nextChapterIndex++;
         }
 
-        // If we couldn't find a next chapter with the preferred group,
-        // and we haven't set a fallback, set nextChapter to null
         if (
           nextChapterIndex >= sortedChapters.length &&
           currentIndex < sortedChapters.length - 1
         ) {
-          // Just use the immediate next chapter if no match for preferred group
           setNextChapter({
             chap: sortedChapters[currentIndex + 1].chap,
             hid: sortedChapters[currentIndex + 1].hid,
           });
         } else if (currentIndex === sortedChapters.length - 1) {
-          // If this is the last chapter, there is no next chapter
           setNextChapter(null);
         }
       } catch (err) {
@@ -381,15 +368,19 @@ export default function ChapterReader() {
         }`}
       >
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href={`/comic/${slug}`}>
+          <div className="flex gap-2">
+            {/* Home button */}
+            <Link href="/">
               <Button variant="ghost" size="icon">
-                <Home className="h-5 w-5" />
+                <Home className="w-5 h-5" />
               </Button>
             </Link>
-            <h1 className="text-sm font-medium truncate max-w-[150px] sm:max-w-md">
-              {loading ? "Loading..." : chapterTitle}
-            </h1>
+
+            <Link href={`/comic/${slug}`}>
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+            </Link>
           </div>
 
           <div className="flex items-center gap-1">

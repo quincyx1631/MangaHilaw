@@ -868,62 +868,86 @@ export default function BrowsePage() {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          <RadioGroup
-                            value={
-                              filters.from ? filters.from.toString() : "all"
-                            }
-                            onValueChange={(value) => {
-                              if (value === "all") {
-                                handleYearChange(undefined, undefined);
-                              } else {
-                                handleYearChange(
-                                  Number.parseInt(value),
-                                  undefined
-                                );
-                              }
-                            }}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="all" id="all-years" />
-                              <Label htmlFor="all-years">All Years</Label>
+                          <div className="flex flex-col space-y-4">
+                            <div>
+                              <Label
+                                htmlFor="year-from"
+                                className="text-sm mb-1 block"
+                              >
+                                From
+                              </Label>
+                              <select
+                                id="year-from"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={filters.from?.toString() || ""}
+                                onChange={(e) => {
+                                  const fromYear = e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined;
+                                  handleYearChange(fromYear, filters.to);
+                                }}
+                              >
+                                <option value="">Any</option>
+                                {Array.from(
+                                  { length: 26 },
+                                  (_, i) => 2025 - i
+                                ).map((year) => (
+                                  <option key={`from-${year}`} value={year}>
+                                    {year}
+                                  </option>
+                                ))}
+                                <option value="1990">1990s</option>
+                                <option value="1980">1980s</option>
+                                <option value="1970">Before 1980</option>
+                              </select>
                             </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2025" id="r-2025" />
-                              <Label htmlFor="r-2025">2025</Label>
+
+                            <div>
+                              <Label
+                                htmlFor="year-to"
+                                className="text-sm mb-1 block"
+                              >
+                                To
+                              </Label>
+                              <select
+                                id="year-to"
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={filters.to?.toString() || ""}
+                                onChange={(e) => {
+                                  const toYear = e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined;
+                                  handleYearChange(filters.from, toYear);
+                                }}
+                                disabled={!filters.from}
+                              >
+                                <option value="">Any</option>
+                                {Array.from({ length: 26 }, (_, i) => 2025 - i)
+                                  .filter(
+                                    (year) =>
+                                      !filters.from || year >= filters.from
+                                  )
+                                  .map((year) => (
+                                    <option key={`to-${year}`} value={year}>
+                                      {year}
+                                    </option>
+                                  ))}
+                              </select>
                             </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2024" id="r-2024" />
-                              <Label htmlFor="r-2024">2024</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2023" id="r-2023" />
-                              <Label htmlFor="r-2023">2023</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2022" id="r-2022" />
-                              <Label htmlFor="r-2022">2022</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2021" id="r-2021" />
-                              <Label htmlFor="r-2021">2021</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2020" id="r-2020" />
-                              <Label htmlFor="r-2020">2020</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2015" id="r-2015" />
-                              <Label htmlFor="r-2015">2015-2019</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2010" id="r-2010" />
-                              <Label htmlFor="r-2010">2010-2014</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <RadioGroupItem value="2000" id="r-2000" />
-                              <Label htmlFor="r-2000">Before 2000</Label>
-                            </div>
-                          </RadioGroup>
+
+                            {(filters.from || filters.to) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleYearChange(undefined, undefined)
+                                }
+                                className="w-full"
+                              >
+                                Clear Year Range
+                              </Button>
+                            )}
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
