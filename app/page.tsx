@@ -156,7 +156,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-4">Popular Manga</h1>
+          <h1 className="text-2xl font-bold mb-4">Recently Added</h1>
 
           {error ? (
             <div className="p-8 text-center">

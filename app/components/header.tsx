@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Book, Loader2, Search, User } from "lucide-react";
+import { Book, Loader2, Search, User, ChevronDown } from "lucide-react";
 import type React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ThemeToggle } from "./theme-toggle";
@@ -16,6 +16,15 @@ import {
   getCoverImageUrl,
   debounce,
 } from "@/app/components/search";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import SignInModal from "@/app/components/auth/signin";
+import RegisterModal from "@/app/components/auth/register";
 
 export default function Header() {
   const pathname = usePathname();
@@ -24,6 +33,8 @@ export default function Header() {
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchMobileContainerRef = useRef<HTMLDivElement>(null);
 
@@ -103,6 +114,22 @@ export default function Header() {
         }
       }, 100);
     }
+  };
+
+  const openSignInModal = () => {
+    setShowSignInModal(true);
+  };
+
+  const openRegisterModal = () => {
+    setShowRegisterModal(true);
+  };
+
+  const closeSignInModal = () => {
+    setShowSignInModal(false);
+  };
+
+  const closeRegisterModal = () => {
+    setShowRegisterModal(false);
   };
 
   const SearchResultsList = ({ results }: { results: MangaSearchResult[] }) => {
@@ -223,7 +250,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
         <div className="container mx-auto px-4 py-2.5">
           <div className="flex items-center justify-between gap-2">
             {/* Logo */}
@@ -320,13 +347,29 @@ export default function Header() {
                 <Link href="/browse">Browse</Link>
               </Button>
 
-              {/* Login button */}
-              <Button variant="outline" size="sm" asChild className="h-9">
-                <Link href="/login">
-                  <User className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Login</span>
-                </Link>
-              </Button>
+              {/* Login dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9">
+                    <User className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Account</span>
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem className="text-muted-foreground">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Not logged in</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={openSignInModal}>
+                    Sign in
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={openRegisterModal}>
+                    Register
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -404,6 +447,25 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      {/* Auth Modals */}
+      <SignInModal
+        isOpen={showSignInModal}
+        onClose={closeSignInModal}
+        onRegisterClick={() => {
+          closeSignInModal();
+          openRegisterModal();
+        }}
+      />
+
+      <RegisterModal
+        isOpen={showRegisterModal}
+        onClose={closeRegisterModal}
+        onSignInClick={() => {
+          closeRegisterModal();
+          openSignInModal();
+        }}
+      />
     </>
   );
 }
