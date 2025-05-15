@@ -5,7 +5,9 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EyeIcon, EyeOffIcon, X } from "lucide-react";
+import { EyeIcon, EyeOffIcon, X, AlertCircle, Loader2 } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -22,7 +24,16 @@ export default function SignInModal({
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const { login, error: authError, clearError, isAuthenticated } = useAuth();
+
+  // Close modal if user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && isOpen) {
+      onClose();
+    }
+  }, [isAuthenticated, isOpen, onClose]);
 
   // Handle click outside to close modal
   useEffect(() => {
@@ -61,26 +72,49 @@ export default function SignInModal({
     };
   }, [isOpen, onClose]);
 
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  // Clear errors when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setLocalError(null);
+      clearError();
+    }
+  }, [isOpen, clearError]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLocalError(null);
 
-    // Simulate authentication process
     try {
-      // Here you would normally call your authentication API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Sign in with:", { email, password });
-
-      // If successful, close the modal
-      onClose();
+      await login({ email, password });
+      // Don't call onClose() here - let the useEffect handle it when isAuthenticated changes
     } catch (error) {
-      console.error("Sign in failed:", error);
-    } finally {
-      setIsLoading(false);
+      if (error instanceof Error) {
+        setLocalError(error.message);
+      } else {
+        setLocalError("An unexpected error occurred");
+      }
+      setIsLoading(false); // Only set loading to false on error
     }
+    // Don't set isLoading to false here - it will be handled by the auth context
   };
 
   if (!isOpen) return null;
+
+  const errorMessage = localError || authError;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -90,9 +124,9 @@ export default function SignInModal({
       {/* Modal content */}
       <div
         ref={modalRef}
-        className="bg-background rounded-lg shadow-lg w-full max-w-md mx-4 z-50 relative"
+        className="bg-background rounded-lg shadow-lg w-full max-w-md mx-4 z-50 relative max-h-[90vh] overflow-y-auto"
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-xl font-semibold">Sign In</h2>
@@ -111,6 +145,13 @@ export default function SignInModal({
             </Button>
           </div>
 
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -121,6 +162,7 @@ export default function SignInModal({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -142,6 +184,7 @@ export default function SignInModal({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
                 <Button
                   type="button"
@@ -149,6 +192,7 @@ export default function SignInModal({
                   size="icon"
                   className="absolute right-0 top-0 h-full px-3"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOffIcon className="h-4 w-4" />
@@ -163,7 +207,14 @@ export default function SignInModal({
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </Button>
 
             <div className="text-center text-sm">
@@ -173,6 +224,7 @@ export default function SignInModal({
                 className="p-0 h-auto"
                 type="button"
                 onClick={onRegisterClick}
+                disabled={isLoading}
               >
                 Register
               </Button>

@@ -36,7 +36,7 @@ import {
   debounce,
   getCoverImageUrl,
   type MangaSearchResult,
-} from "@/app/components/search";
+} from "@/app/components/header/search";
 import {
   FilterState,
   genresList,

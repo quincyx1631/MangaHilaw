@@ -1,10 +1,10 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Book, Loader2, Search, User, ChevronDown } from "lucide-react";
+import { Book, Loader2, Search, User, ChevronDown, LogOut } from "lucide-react";
 import type React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "@/app/components/header/theme-toggle";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,7 +15,7 @@ import {
   searchManga,
   getCoverImageUrl,
   debounce,
-} from "@/app/components/search";
+} from "@/app/components/header/search";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import SignInModal from "@/app/components/auth/signin";
 import RegisterModal from "@/app/components/auth/register";
+import { useAuth } from "@/context/auth-context";
 
 export default function Header() {
   const pathname = usePathname();
@@ -37,6 +38,7 @@ export default function Header() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchMobileContainerRef = useRef<HTMLDivElement>(null);
+  const { user, isAuthenticated, logout } = useAuth();
 
   const fetchSearchResults = useCallback(async (query: string) => {
     setIsLoading(true);
@@ -130,6 +132,10 @@ export default function Header() {
 
   const closeRegisterModal = () => {
     setShowRegisterModal(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
   };
 
   const SearchResultsList = ({ results }: { results: MangaSearchResult[] }) => {
@@ -347,27 +353,60 @@ export default function Header() {
                 <Link href="/browse">Browse</Link>
               </Button>
 
-              {/* Login dropdown */}
+              {/* Account dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9">
                     <User className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">Account</span>
+                    <span className="hidden md:inline">
+                      {isAuthenticated
+                        ? user?.username || "Account"
+                        : "Account"}
+                    </span>
                     <ChevronDown className="ml-1 h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem className="text-muted-foreground">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Not logged in</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={openSignInModal}>
-                    Sign in
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={openRegisterModal}>
-                    Register
-                  </DropdownMenuItem>
+                  {isAuthenticated ? (
+                    <>
+                      <DropdownMenuItem className="font-medium">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>{user?.username}</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile">Profile</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/bookmarks">Bookmarks</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/history">Reading History</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="text-destructive"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Logout</span>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem className="text-muted-foreground">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Not logged in</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={openSignInModal}>
+                        Sign in
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={openRegisterModal}>
+                        Register
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -449,23 +488,27 @@ export default function Header() {
       )}
 
       {/* Auth Modals */}
-      <SignInModal
-        isOpen={showSignInModal}
-        onClose={closeSignInModal}
-        onRegisterClick={() => {
-          closeSignInModal();
-          openRegisterModal();
-        }}
-      />
+      {showSignInModal && (
+        <SignInModal
+          isOpen={showSignInModal}
+          onClose={closeSignInModal}
+          onRegisterClick={() => {
+            closeSignInModal();
+            openRegisterModal();
+          }}
+        />
+      )}
 
-      <RegisterModal
-        isOpen={showRegisterModal}
-        onClose={closeRegisterModal}
-        onSignInClick={() => {
-          closeRegisterModal();
-          openSignInModal();
-        }}
-      />
+      {showRegisterModal && (
+        <RegisterModal
+          isOpen={showRegisterModal}
+          onClose={closeRegisterModal}
+          onSignInClick={() => {
+            closeRegisterModal();
+            openSignInModal();
+          }}
+        />
+      )}
     </>
   );
 }

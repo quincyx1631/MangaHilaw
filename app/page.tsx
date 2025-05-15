@@ -13,7 +13,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MangaCard } from "./components/manga-card";
+import { MangaCard } from "./components/homepage/manga-card";
 import type { MangaChapter } from "./types/manga";
 
 export default function HomePage() {

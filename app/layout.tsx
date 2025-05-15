@@ -1,23 +1,25 @@
+import type React from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "next-themes";
-import { ReactNode } from "react";
-import Header from "./components/header";
+import type { Metadata } from "next";
+import { ClientProviders } from "@/app/client-providers";
 
 const inter = Inter({ subsets: ["latin"] });
-export const metadata = {
+
+export const metadata: Metadata = {
   title: "MangaHilaw",
   description: "A modern manga reading website",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Header />
-          {children}
-        </ThemeProvider>
+        <ClientProviders>{children}</ClientProviders>
       </body>
     </html>
   );
