@@ -1,14 +1,22 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { Book, Loader2, Search, User, ChevronDown, LogOut } from "lucide-react";
+import {
+  Book,
+  Loader2,
+  Search,
+  User,
+  ChevronDown,
+  LogOut,
+  ArrowRight,
+} from "lucide-react";
 import type React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ThemeToggle } from "@/app/components/header/theme-toggle";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   type MangaSearchResult,
@@ -29,6 +37,7 @@ import { useAuth } from "@/context/auth-context";
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<MangaSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,6 +95,15 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    // Clear search when navigating to a non-search page
+    if (pathname && !pathname.startsWith("/search")) {
+      setSearchQuery("");
+      setSearchResults([]);
+      setShowResults(false);
+    }
+  }, [pathname]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     if (e.target.value.length === 0) {
@@ -104,6 +122,25 @@ export default function Header() {
     setSearchQuery("");
     setSearchResults([]);
     setShowResults(false);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim().length >= 2) {
+      e.preventDefault();
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setShowResults(false);
+      setShowMobileSearch(false);
+    }
+  };
+
+  const handleAdvancedSearch = () => {
+    if (searchQuery.trim().length >= 2) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+    } else {
+      router.push("/search");
+    }
+    setShowResults(false);
+    setShowMobileSearch(false);
   };
 
   const toggleMobileSearch = () => {
@@ -282,6 +319,7 @@ export default function Header() {
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onFocus={handleSearchFocus}
+                  onKeyDown={handleSearchKeyDown}
                 />
                 {searchQuery.length > 0 && (
                   <button
@@ -321,7 +359,24 @@ export default function Header() {
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       </div>
                     ) : (
-                      <SearchResultsList results={searchResults} />
+                      <>
+                        {/* Advanced Search Link */}
+                        <div className="p-2 border-t">
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-between text-primary hover:text-primary hover:bg-primary/10"
+                            onClick={handleAdvancedSearch}
+                          >
+                            <span>
+                              Advanced search for{" "}
+                              {searchQuery.length >= 2 ? searchQuery : "manga"}
+                            </span>
+                            <ArrowRight className="h-4 w-4 ml-2" />
+                          </Button>
+                        </div>
+
+                        <SearchResultsList results={searchResults} />
+                      </>
                     )}
                   </div>
                 )}
@@ -434,6 +489,7 @@ export default function Header() {
                   className="pl-8 pr-8 h-9"
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  onKeyDown={handleSearchKeyDown}
                   autoFocus
                 />
                 {searchQuery.length > 0 && (
@@ -480,7 +536,24 @@ export default function Header() {
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <SearchResultsList results={searchResults} />
+                <>
+                  {/* Advanced Search Link for Mobile */}
+                  <div className="p-2 border-t">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between text-primary hover:text-primary hover:bg-primary/10"
+                      onClick={handleAdvancedSearch}
+                    >
+                      <span>
+                        Advanced search for{" "}
+                        {searchQuery.length >= 2 ? searchQuery : "manga"}
+                      </span>
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+
+                  <SearchResultsList results={searchResults} />
+                </>
               )}
             </div>
           </div>

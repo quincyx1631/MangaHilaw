@@ -33,12 +33,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
-  debounce,
   getCoverImageUrl,
   type MangaSearchResult,
 } from "@/app/components/header/search";
 import {
-  FilterState,
+  type FilterState,
   genresList,
   themesList,
   formatsList,
@@ -55,6 +54,17 @@ export default function BrowsePage() {
   const [showFilters, setShowFilters] = useState(false);
 
   const [filters, setFilters] = useState<FilterState>({
+    genres: [],
+    excludes: [],
+    demographic: [],
+    country: [],
+    page: 1,
+    limit: 20,
+    showall: true,
+    q: "",
+  });
+
+  const [pendingFilters, setPendingFilters] = useState<FilterState>({
     genres: [],
     excludes: [],
     demographic: [],
@@ -91,6 +101,24 @@ export default function BrowsePage() {
     const showall = searchParams.get("showall") !== "false";
 
     setFilters({
+      genres,
+      excludes,
+      demographic,
+      country,
+      status,
+      content_rating,
+      from,
+      to,
+      minimum,
+      sort,
+      completed,
+      page,
+      limit,
+      showall,
+      q: query,
+    });
+
+    setPendingFilters({
       genres,
       excludes,
       demographic,
@@ -247,22 +275,14 @@ export default function BrowsePage() {
     searchManga(filters);
   }, [filters, searchManga]);
 
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      setFilters((prev) => ({ ...prev, q: query, page: 1 }));
-      updateUrl({ ...filters, q: query, page: 1 });
-    }, 1000),
-    [filters, updateUrl]
-  );
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    debouncedSearch(query);
+    setPendingFilters((prev) => ({ ...prev, q: query, page: 1 }));
   };
 
   const toggleGenre = (genre: string, isExclude = false) => {
-    setFilters((prev) => {
+    setPendingFilters((prev) => {
       const targetArray = isExclude ? "excludes" : "genres";
       const otherArray = isExclude ? "genres" : "excludes";
 
@@ -286,7 +306,7 @@ export default function BrowsePage() {
   };
 
   const toggleDemographic = (demo: number) => {
-    setFilters((prev) => {
+    setPendingFilters((prev) => {
       if (prev.demographic.includes(demo)) {
         return {
           ...prev,
@@ -303,7 +323,7 @@ export default function BrowsePage() {
   };
 
   const toggleCountry = (country: string) => {
-    setFilters((prev) => {
+    setPendingFilters((prev) => {
       if (prev.country.includes(country)) {
         return {
           ...prev,
@@ -320,7 +340,7 @@ export default function BrowsePage() {
   };
 
   const handleStatusChange = (status: number | undefined) => {
-    setFilters((prev) => ({
+    setPendingFilters((prev) => ({
       ...prev,
       status,
       page: 1,
@@ -328,7 +348,7 @@ export default function BrowsePage() {
   };
 
   const handleContentRatingChange = (rating: string | undefined) => {
-    setFilters((prev) => ({
+    setPendingFilters((prev) => ({
       ...prev,
       content_rating: rating,
       page: 1,
@@ -336,7 +356,7 @@ export default function BrowsePage() {
   };
 
   const handleSortChange = (sort: string | undefined) => {
-    setFilters((prev) => ({
+    setPendingFilters((prev) => ({
       ...prev,
       sort,
       page: 1,
@@ -344,7 +364,7 @@ export default function BrowsePage() {
   };
 
   const handleYearChange = (from?: number, to?: number) => {
-    setFilters((prev) => ({
+    setPendingFilters((prev) => ({
       ...prev,
       from,
       to,
@@ -353,7 +373,7 @@ export default function BrowsePage() {
   };
 
   const toggleCompleted = () => {
-    setFilters((prev) => ({
+    setPendingFilters((prev) => ({
       ...prev,
       completed: !prev.completed,
       page: 1,
@@ -370,7 +390,7 @@ export default function BrowsePage() {
   };
 
   const clearFilters = () => {
-    setFilters({
+    const clearedFilters = {
       genres: [],
       excludes: [],
       demographic: [],
@@ -379,21 +399,15 @@ export default function BrowsePage() {
       limit: 20,
       showall: true,
       q: searchQuery,
-    });
-    updateUrl({
-      genres: [],
-      excludes: [],
-      demographic: [],
-      country: [],
-      page: 1,
-      limit: 20,
-      showall: true,
-      q: searchQuery,
-    });
+    };
+    setFilters(clearedFilters);
+    setPendingFilters(clearedFilters);
+    updateUrl(clearedFilters);
   };
 
   const applyFilters = () => {
-    updateUrl(filters);
+    setFilters(pendingFilters);
+    updateUrl(pendingFilters);
     setShowFilters(false);
   };
 
@@ -471,10 +485,19 @@ export default function BrowsePage() {
             )}
           >
             <div className="sticky top-20 bg-background">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Filters</h2>
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  Clear All
+              <div className="space-y-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Filters</h2>
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    Clear All
+                  </Button>
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={applyFilters}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Applying..." : "Apply Filters"}
                 </Button>
               </div>
 
@@ -488,19 +511,20 @@ export default function BrowsePage() {
                     value={searchQuery}
                     onChange={handleSearchChange}
                   />
-                  {searchQuery && (
-                    <button
-                      className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setFilters((prev) => ({ ...prev, q: "", page: 1 }));
-                        updateUrl({ ...filters, q: "", page: 1 });
-                      }}
-                      aria-label="Clear search"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
+                  <button
+                    className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setPendingFilters((prev) => ({
+                        ...prev,
+                        q: "",
+                        page: 1,
+                      }));
+                    }}
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
 
                 <ScrollArea className="h-[calc(100vh-220px)]">
@@ -518,7 +542,7 @@ export default function BrowsePage() {
                         </AccordionTrigger>
                         <AccordionContent>
                           <RadioGroup
-                            value={filters.sort || "created_at"}
+                            value={pendingFilters.sort || "created_at"}
                             onValueChange={(value) => handleSortChange(value)}
                           >
                             <div className="flex items-center space-x-2 ">
@@ -567,7 +591,7 @@ export default function BrowsePage() {
                         </AccordionTrigger>
                         <AccordionContent>
                           <RadioGroup
-                            value={filters.status?.toString() || "all"}
+                            value={pendingFilters.status?.toString() || "all"}
                             onValueChange={(value) => {
                               if (value === "all") {
                                 handleStatusChange(undefined);
@@ -602,7 +626,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="completed-translation"
-                                checked={filters.completed}
+                                checked={pendingFilters.completed}
                                 onCheckedChange={() => toggleCompleted()}
                               />
                               <Label htmlFor="completed-translation">
@@ -630,7 +654,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="country-jp"
-                                checked={filters.country.includes("jp")}
+                                checked={pendingFilters.country.includes("jp")}
                                 onCheckedChange={() => toggleCountry("jp")}
                               />
                               <Label htmlFor="country-jp">Japan (Manga)</Label>
@@ -638,7 +662,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="country-kr"
-                                checked={filters.country.includes("kr")}
+                                checked={pendingFilters.country.includes("kr")}
                                 onCheckedChange={() => toggleCountry("kr")}
                               />
                               <Label htmlFor="country-kr">Korea (Manhwa)</Label>
@@ -646,7 +670,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="country-cn"
-                                checked={filters.country.includes("cn")}
+                                checked={pendingFilters.country.includes("cn")}
                                 onCheckedChange={() => toggleCountry("cn")}
                               />
                               <Label htmlFor="country-cn">China (Manhua)</Label>
@@ -654,7 +678,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="country-other"
-                                checked={filters.country.some(
+                                checked={pendingFilters.country.some(
                                   (c) => !["jp", "kr", "cn"].includes(c)
                                 )}
                                 onCheckedChange={() => toggleCountry("other")}
@@ -686,7 +710,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="demo-1"
-                                checked={filters.demographic.includes(1)}
+                                checked={pendingFilters.demographic.includes(1)}
                                 onCheckedChange={() => toggleDemographic(1)}
                               />
                               <Label htmlFor="demo-1">Shounen</Label>
@@ -694,7 +718,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="demo-2"
-                                checked={filters.demographic.includes(2)}
+                                checked={pendingFilters.demographic.includes(2)}
                                 onCheckedChange={() => toggleDemographic(2)}
                               />
                               <Label htmlFor="demo-2">Shoujo</Label>
@@ -702,7 +726,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="demo-3"
-                                checked={filters.demographic.includes(3)}
+                                checked={pendingFilters.demographic.includes(3)}
                                 onCheckedChange={() => toggleDemographic(3)}
                               />
                               <Label htmlFor="demo-3">Seinen</Label>
@@ -710,7 +734,7 @@ export default function BrowsePage() {
                             <div className="flex items-center space-x-2">
                               <Checkbox
                                 id="demo-4"
-                                checked={filters.demographic.includes(4)}
+                                checked={pendingFilters.demographic.includes(4)}
                                 onCheckedChange={() => toggleDemographic(4)}
                               />
                               <Label htmlFor="demo-4">Josei</Label>
@@ -741,7 +765,7 @@ export default function BrowsePage() {
                                 <div className="flex items-center">
                                   <Checkbox
                                     id={`genre-${genre.slug}`}
-                                    checked={filters.genres.includes(
+                                    checked={pendingFilters.genres.includes(
                                       genre.slug
                                     )}
                                     onCheckedChange={() =>
@@ -787,7 +811,7 @@ export default function BrowsePage() {
                                 <div className="flex items-center">
                                   <Checkbox
                                     id={`theme-${theme.slug}`}
-                                    checked={filters.genres.includes(
+                                    checked={pendingFilters.genres.includes(
                                       theme.slug
                                     )}
                                     onCheckedChange={() =>
@@ -833,7 +857,7 @@ export default function BrowsePage() {
                                 <div className="flex items-center">
                                   <Checkbox
                                     id={`format-${format.slug}`}
-                                    checked={filters.genres.includes(
+                                    checked={pendingFilters.genres.includes(
                                       format.slug
                                     )}
                                     onCheckedChange={() =>
@@ -879,12 +903,12 @@ export default function BrowsePage() {
                               <select
                                 id="year-from"
                                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                value={filters.from?.toString() || ""}
+                                value={pendingFilters.from?.toString() || ""}
                                 onChange={(e) => {
                                   const fromYear = e.target.value
                                     ? Number(e.target.value)
                                     : undefined;
-                                  handleYearChange(fromYear, filters.to);
+                                  handleYearChange(fromYear, pendingFilters.to);
                                 }}
                               >
                                 <option value="">Any</option>
@@ -912,20 +936,21 @@ export default function BrowsePage() {
                               <select
                                 id="year-to"
                                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                value={filters.to?.toString() || ""}
+                                value={pendingFilters.to?.toString() || ""}
                                 onChange={(e) => {
                                   const toYear = e.target.value
                                     ? Number(e.target.value)
                                     : undefined;
-                                  handleYearChange(filters.from, toYear);
+                                  handleYearChange(pendingFilters.from, toYear);
                                 }}
-                                disabled={!filters.from}
+                                disabled={!pendingFilters.from}
                               >
                                 <option value="">Any</option>
                                 {Array.from({ length: 26 }, (_, i) => 2025 - i)
                                   .filter(
                                     (year) =>
-                                      !filters.from || year >= filters.from
+                                      !pendingFilters.from ||
+                                      year >= pendingFilters.from
                                   )
                                   .map((year) => (
                                     <option key={`to-${year}`} value={year}>
@@ -935,7 +960,7 @@ export default function BrowsePage() {
                               </select>
                             </div>
 
-                            {(filters.from || filters.to) && (
+                            {(pendingFilters.from || pendingFilters.to) && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -965,7 +990,7 @@ export default function BrowsePage() {
                         </AccordionTrigger>
                         <AccordionContent>
                           <RadioGroup
-                            value={filters.content_rating || "all"}
+                            value={pendingFilters.content_rating || "all"}
                             onValueChange={(value) => {
                               if (value === "all") {
                                 handleContentRatingChange(undefined);
@@ -1004,8 +1029,9 @@ export default function BrowsePage() {
                 <Button
                   className="w-full md:hidden mt-4"
                   onClick={applyFilters}
+                  disabled={isLoading}
                 >
-                  Apply Filters
+                  {isLoading ? "Applying..." : "Apply Filters"}
                 </Button>
               </div>
             </div>
@@ -1249,6 +1275,7 @@ export default function BrowsePage() {
                                   <Image
                                     src={
                                       getCoverImageUrl(coverKey) ||
+                                      "/placeholder.svg" ||
                                       "/placeholder.svg"
                                     }
                                     alt={manga.title || "Manga cover"}
@@ -1338,6 +1365,7 @@ export default function BrowsePage() {
                                 <Image
                                   src={
                                     getCoverImageUrl(coverKey) ||
+                                    "/placeholder.svg" ||
                                     "/placeholder.svg"
                                   }
                                   alt={manga.title || "Manga cover"}

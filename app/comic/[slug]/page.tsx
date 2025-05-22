@@ -37,13 +37,14 @@ export default function MangaReader() {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchGroup, setSearchGroup] = useState("");
-  const [filteredChapters, setFilteredChapters] = useState<Chapter[]>([]);
   const [uniqueGroups, setUniqueGroups] = useState<string[]>([]);
   const [chapterOrder, setChapterOrder] = useState<0 | 1>(0);
+  const chaptersPerPage = 15;
 
-  const fetchMangaData = async (pageNum = 1) => {
+  const fetchMangaData = async () => {
     setLoading(true);
     setError(null);
+    console.log("Fetching manga data for slug:", slug);
 
     try {
       const mangaResponse = await fetch(`/api/manga/comic/${slug}`);
@@ -52,12 +53,19 @@ export default function MangaReader() {
       }
 
       const mangaData: ComicResponse = await mangaResponse.json();
+      console.log("Manga data received:", mangaData);
+
       const mangaHid = mangaData.comic.hid;
+      setMangaInfo(mangaData.comic);
 
-      if (!mangaInfo) setMangaInfo(mangaData.comic);
-
+      console.log(
+        "Fetching chapters for hid:",
+        mangaHid,
+        "with order:",
+        chapterOrder
+      );
       const chaptersResponse = await fetch(
-        `/api/manga/comic/${mangaHid}/chapters?limit=10&page=${pageNum}&chap-order=${chapterOrder}&lang=en`
+        `/api/manga/comic/${mangaHid}/chapters?limit=9999&page=1&chap-order=${chapterOrder}&lang=en`
       );
 
       if (!chaptersResponse.ok) {
@@ -65,16 +73,16 @@ export default function MangaReader() {
       }
 
       const chaptersData: ChapterResponse = await chaptersResponse.json();
+      console.log("Chapters received:", chaptersData.chapters.length);
 
       if (chaptersData.chapters.length === 0) {
         setError("No chapters found.");
+        setChapters([]);
+        setTotalChapters(0);
         return;
       }
-      setChapters((prev) =>
-        pageNum === 1
-          ? chaptersData.chapters
-          : [...prev, ...chaptersData.chapters]
-      );
+
+      setChapters(chaptersData.chapters);
       setTotalChapters(chaptersData.total);
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -90,34 +98,45 @@ export default function MangaReader() {
     if (slug) {
       setPage(1);
       setChapters([]);
-      fetchMangaData(1);
+      fetchMangaData();
     }
 
     return () => {
       setMangaInfo(null);
       setChapters([]);
-      setFilteredChapters([]);
       setUniqueGroups([]);
     };
   }, [slug, chapterOrder]);
 
+  // Filter and paginate chapters
+  const filteredChapters = chapters.filter((chapter) => {
+    const matchesChapter = searchTerm
+      ? chapter.chap.trim().toLowerCase() === searchTerm.trim().toLowerCase()
+      : true;
+
+    const matchesGroup = searchGroup
+      ? chapter.group_name.some((group) =>
+          group.toLowerCase().includes(searchGroup.toLowerCase())
+        )
+      : true;
+
+    return matchesChapter && matchesGroup;
+  });
+
+  const paginatedChapters = filteredChapters.slice(
+    (page - 1) * chaptersPerPage,
+    page * chaptersPerPage
+  );
+  const totalFiltered = filteredChapters.length;
+  const totalPages = Math.ceil(totalFiltered / chaptersPerPage);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo(0, 0);
+  };
+
   useEffect(() => {
-    const filtered = chapters.filter((chapter) => {
-      const matchesChapter = searchTerm
-        ? chapter.chap.toLowerCase().includes(searchTerm.toLowerCase())
-        : true;
-
-      const matchesGroup = searchGroup
-        ? chapter.group_name.some((group) =>
-            group.toLowerCase().includes(searchGroup.toLowerCase())
-          )
-        : true;
-
-      return matchesChapter && matchesGroup;
-    });
-
-    setFilteredChapters(filtered);
-
+    // Update unique groups when chapters change
     const groups = new Set<string>();
     chapters.forEach((chapter) => {
       chapter.group_name.forEach((group) => {
@@ -125,13 +144,13 @@ export default function MangaReader() {
       });
     });
     setUniqueGroups(Array.from(groups).sort());
-  }, [chapters, searchTerm, searchGroup]);
+  }, [chapters]);
 
   const handleLoadMore = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchMangaData(nextPage);
+    fetchMangaData();
   };
 
   const formatDate = (dateString: string) => {
@@ -189,8 +208,24 @@ export default function MangaReader() {
     const newOrder = chapterOrder === 0 ? 1 : 0;
     setChapterOrder(newOrder);
     setPage(1);
-    setChapters([]);
-    fetchMangaData(1);
+
+    // Sort chapters client-side instead of refetching
+    setChapters((prev) => {
+      const sorted = [...prev].sort((a, b) => {
+        // Compare by publish date instead of chapter number for better sorting
+        const dateA = new Date(a.publish_at).getTime();
+        const dateB = new Date(b.publish_at).getTime();
+
+        if (newOrder === 0) {
+          // Newest first (descending by date)
+          return dateB - dateA;
+        } else {
+          // Oldest first (ascending by date)
+          return dateA - dateB;
+        }
+      });
+      return sorted;
+    });
   };
 
   if (loading) return <MangaInfoSkeleton />;
@@ -357,7 +392,7 @@ export default function MangaReader() {
             </div>
 
             <div className="space-y-2 sm:space-y-3">
-              {filteredChapters.map((chapter) => (
+              {paginatedChapters.map((chapter) => (
                 <Link
                   key={chapter.id}
                   href={`/comic/${mangaInfo.slug}/chapter/${chapter.hid}`}
@@ -399,7 +434,7 @@ export default function MangaReader() {
               ))}
             </div>
 
-            {filteredChapters.length === 0 && (searchTerm || searchGroup) && (
+            {totalFiltered === 0 && (searchTerm || searchGroup) && (
               <div className="py-8 text-center">
                 <p className="text-muted-foreground">
                   No chapters match your search criteria.
@@ -407,15 +442,26 @@ export default function MangaReader() {
               </div>
             )}
 
-            {chapters.length < totalChapters && !searchTerm && !searchGroup && (
-              <div className="mt-4 sm:mt-6 text-center">
+            {totalFiltered > chaptersPerPage && (
+              <div className="mt-4 flex justify-center">
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto"
-                  onClick={handleLoadMore}
-                  disabled={loading}
+                  className="mx-1"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
                 >
-                  {loading ? "Loading..." : "Load More Chapters"}
+                  Previous
+                </Button>
+                <span className="p-2 text-sm">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  className="mx-1"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages}
+                >
+                  Next
                 </Button>
               </div>
             )}
