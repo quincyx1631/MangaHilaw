@@ -1,3 +1,4 @@
+//app/components/homepage/manga-card.tsx
 import Image from "next/image";
 import { Book, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";

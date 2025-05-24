@@ -56,6 +56,7 @@ export interface Chapter {
     user_follow_count: number;
     md_covers: MangaCover[];
     md_comic_md_genres: MangaGenre[];
+    country: string;
   }
   
   export interface ComicResponse {

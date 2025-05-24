@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams } from "next/navigation";
+import { BookmarkButton } from "@/components/bookmark-button";
 
 import type {
   Chapter,
@@ -57,13 +58,6 @@ export default function MangaReader() {
 
       const mangaHid = mangaData.comic.hid;
       setMangaInfo(mangaData.comic);
-
-      console.log(
-        "Fetching chapters for hid:",
-        mangaHid,
-        "with order:",
-        chapterOrder
-      );
       const chaptersResponse = await fetch(
         `/api/manga/comic/${mangaHid}/chapters?limit=9999&page=1&chap-order=${chapterOrder}&lang=en`
       );
@@ -138,11 +132,17 @@ export default function MangaReader() {
   useEffect(() => {
     // Update unique groups when chapters change
     const groups = new Set<string>();
-    chapters.forEach((chapter) => {
-      chapter.group_name.forEach((group) => {
-        groups.add(group);
+    if (chapters && Array.isArray(chapters)) {
+      chapters.forEach((chapter) => {
+        // Add null check for group_name array
+        if (chapter.group_name && Array.isArray(chapter.group_name)) {
+          chapter.group_name.forEach((group) => {
+            groups.add(group);
+          });
+        }
       });
-    });
+    }
+
     setUniqueGroups(Array.from(groups).sort());
   }, [chapters]);
 
@@ -313,9 +313,20 @@ export default function MangaReader() {
 
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Button className="w-full sm:w-auto">Read First Chapter</Button>
-                <Button variant="outline" className="w-full sm:w-auto">
-                  Read Latest Chapter
-                </Button>
+                <BookmarkButton
+                  mangaData={{
+                    manga_id: mangaInfo.id.toString(),
+                    manga_hid: mangaInfo.hid,
+                    manga_title: mangaInfo.title,
+                    manga_slug: mangaInfo.slug,
+                    manga_cover_b2key: mangaInfo.md_covers?.[0]?.b2key,
+                    manga_status: mangaInfo.status,
+                    manga_country: mangaInfo.country,
+                  }}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  showText={true}
+                />
               </div>
             </div>
           </div>

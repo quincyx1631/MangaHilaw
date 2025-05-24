@@ -43,6 +43,8 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Chapter, ChapterImage } from "@/app/types/mangaInfo";
+import { useBookmarks } from "@/hooks/use-bookmarks";
+import { useAuth } from "@/context/auth-context";
 
 interface Comment {
   id: string;
@@ -80,6 +82,10 @@ export default function ChapterReader() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [availableGroups, setAvailableGroups] = useState<string[]>([]);
   const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
+  const { updateReadingProgress, checkBookmark } = useBookmarks();
+  const { isAuthenticated } = useAuth();
+  const [bookmarkId, setBookmarkId] = useState<string | null>(null);
+  const [mangaInfo, setMangaInfo] = useState<any>(null);
 
   useEffect(() => {
     const fetchChapterData = async () => {
@@ -113,6 +119,8 @@ export default function ChapterReader() {
         if (!mangaResponse.ok) throw new Error(`Failed to fetch manga info`);
         const mangaData = await mangaResponse.json();
         const mangaHid = mangaData.comic.hid;
+
+        setMangaInfo(mangaData.comic);
 
         // 4. Fetch all chapters to have complete data for navigation
         const chaptersResponse = await fetch(
@@ -223,6 +231,17 @@ export default function ChapterReader() {
         } else if (currentIndex === sortedChapters.length - 1) {
           setNextChapter(null);
         }
+
+        if (mangaData.comic.id && currentChapter) {
+          await checkIfBookmarked(mangaData.comic.id.toString());
+
+          // Update reading progress when chapter loads
+          setTimeout(() => {
+            if (bookmarkId) {
+              updateProgress(currentChapter.chap, currentChapter.hid);
+            }
+          }, 1000); // Small delay to ensure bookmark check completes
+        }
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
@@ -271,6 +290,53 @@ export default function ChapterReader() {
     };
   }, []);
 
+  const updateProgress = async (chapterNumber: string, chapterHid: string) => {
+    if (!isAuthenticated || !bookmarkId) return;
+
+    try {
+      await updateReadingProgress(bookmarkId, chapterNumber, chapterHid);
+      console.log(`Updated reading progress to chapter ${chapterNumber}`);
+    } catch (error) {
+      console.error("Failed to update reading progress:", error);
+    }
+  };
+
+  // Add this function to check if manga is bookmarked and get bookmark ID
+  const checkIfBookmarked = async (mangaId: string) => {
+    if (!isAuthenticated) return;
+
+    try {
+      const result = await checkBookmark(mangaId);
+      if (result.isBookmarked && result.bookmarkData?.id) {
+        setBookmarkId(result.bookmarkData.id);
+      }
+    } catch (error) {
+      console.error("Failed to check bookmark status:", error);
+    }
+  };
+
+  useEffect(() => {
+    const handleBookmarkCheck = async () => {
+      if (mangaInfo && isAuthenticated) {
+        await checkIfBookmarked(mangaInfo.id.toString());
+      }
+    };
+
+    handleBookmarkCheck();
+  }, [mangaInfo, isAuthenticated]);
+
+  // Add another useEffect to update progress when bookmark ID is available
+  useEffect(() => {
+    const updateInitialProgress = async () => {
+      if (bookmarkId && currentChapter) {
+        // Update progress when bookmark ID becomes available
+        await updateProgress(currentChapter.chap, currentChapter.hid);
+      }
+    };
+
+    updateInitialProgress();
+  }, [bookmarkId, currentChapter]);
+
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";
     return () => {
@@ -278,14 +344,20 @@ export default function ChapterReader() {
     };
   }, []);
 
-  const handleNextChapter = () => {
+  const handleNextChapter = async () => {
     if (nextChapter) {
+      if (bookmarkId && currentChapter) {
+        await updateProgress(currentChapter.chap, currentChapter.hid);
+      }
       router.push(`/comic/${slug}/chapter/${nextChapter.hid}`);
     }
   };
 
-  const handlePrevChapter = () => {
+  const handlePrevChapter = async () => {
     if (prevChapter) {
+      if (bookmarkId && currentChapter) {
+        await updateProgress(currentChapter.chap, currentChapter.hid);
+      }
       router.push(`/comic/${slug}/chapter/${prevChapter.hid}`);
     }
   };
