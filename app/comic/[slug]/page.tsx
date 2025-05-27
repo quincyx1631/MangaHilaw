@@ -1,4 +1,3 @@
-//comic/[slug]/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams } from "next/navigation";
 import { BookmarkButton } from "@/components/bookmark-button";
+import { MangaRecommendations } from "@/app/components/reader/recommendations";
 
 import type {
   Chapter,
@@ -26,11 +26,15 @@ import type {
   MangaInfo,
   MangaCover,
   MangaGenre,
+  RecommendationCover,
+  RecommendationRelates,
+  Recommendation,
 } from "@/app/types/mangaInfo";
 
 export default function MangaReader() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [mangaInfo, setMangaInfo] = useState<MangaInfo | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalChapters, setTotalChapters] = useState(0);
@@ -58,6 +62,12 @@ export default function MangaReader() {
 
       const mangaHid = mangaData.comic.hid;
       setMangaInfo(mangaData.comic);
+
+      // Set recommendations from the API response
+      if (mangaData.comic.recommendations) {
+        setRecommendations(mangaData.comic.recommendations);
+      }
+
       const chaptersResponse = await fetch(
         `/api/manga/comic/${mangaHid}/chapters?limit=9999&page=1&chap-order=${chapterOrder}&lang=en`
       );
@@ -99,6 +109,7 @@ export default function MangaReader() {
       setMangaInfo(null);
       setChapters([]);
       setUniqueGroups([]);
+      setRecommendations([]);
     };
   }, [slug, chapterOrder]);
 
@@ -477,6 +488,9 @@ export default function MangaReader() {
               </div>
             )}
           </div>
+
+          {/* Recommendations Section */}
+          <MangaRecommendations recommendations={recommendations} />
         </>
       )}
     </div>

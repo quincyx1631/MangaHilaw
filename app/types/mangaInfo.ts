@@ -43,6 +43,28 @@ export interface Chapter {
       group: string;
     };
   }
+
+  // Add these new interfaces for recommendations
+  export interface RecommendationCover {
+    vol: string;
+    w: number;
+    h: number;
+    b2key: string;
+  }
+
+  export interface RecommendationRelates {
+    title: string;
+    slug: string;
+    hid: string;
+    md_covers: RecommendationCover[];
+  }
+
+  export interface Recommendation {
+    up: number;
+    down: number;
+    total: number;
+    relates: RecommendationRelates;
+  }
   
   export interface MangaInfo {
     id: number;
@@ -57,6 +79,7 @@ export interface Chapter {
     md_covers: MangaCover[];
     md_comic_md_genres: MangaGenre[];
     country: string;
+    recommendations?: Recommendation[]; // Add this line
   }
   
   export interface ComicResponse {
