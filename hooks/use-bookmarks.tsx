@@ -68,7 +68,6 @@ export const useBookmarks = () => {
       setLoading(true);
 
       try {
-        // Ensure manga_country has a default value
         const dataToSend = {
           ...bookmarkData,
           manga_country: bookmarkData.manga_country || "jp",
@@ -90,7 +89,6 @@ export const useBookmarks = () => {
             variant: "default",
           });
 
-          // Refresh bookmarks
           await fetchBookmarks();
           return true;
         }
@@ -135,7 +133,6 @@ export const useBookmarks = () => {
             variant: "default",
           });
 
-          // Refresh bookmarks
           await fetchBookmarks();
           return true;
         }
@@ -203,7 +200,6 @@ export const useBookmarks = () => {
         );
 
         if (response.data.success) {
-          // Refresh bookmarks to get updated data
           await fetchBookmarks();
           return true;
         }

@@ -411,14 +411,18 @@ export default function Header() {
               {/* Account dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-2 md:px-3"
+                  >
                     <User className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">
+                    <span className="hidden sm:inline ml-1 md:ml-0">
                       {isAuthenticated
                         ? user?.username || "Account"
                         : "Account"}
                     </span>
-                    <ChevronDown className="ml-1 h-4 w-4" />
+                    <ChevronDown className="ml-1 h-4 w-4 hidden sm:block" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">

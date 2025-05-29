@@ -7,21 +7,15 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  // Add timeout to prevent hanging requests
   timeout: 10000,
 })
 
-// Add a request interceptor to include auth token in requests
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-
-    // If token exists, add it to the request headers
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-
     return config
   },
   (error) => {
@@ -29,19 +23,15 @@ axiosInstance.interceptors.request.use(
   },
 )
 
-// Add a response interceptor to handle auth errors
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 Unauthorized errors (token expired, etc.)
     if (error.response && error.response.status === 401) {
-      // Clear auth data from localStorage
       if (typeof window !== "undefined") {
         localStorage.removeItem("token")
         localStorage.removeItem("user")
 
-        // Don't automatically redirect - let the components handle this
-        // window.location.href = "/"
+        window.dispatchEvent(new CustomEvent("auth-logout"))
       }
     }
     return Promise.reject(error)

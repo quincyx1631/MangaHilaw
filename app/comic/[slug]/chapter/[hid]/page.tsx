@@ -85,6 +85,7 @@ export default function ChapterReader() {
   const { updateReadingProgress, checkBookmark } = useBookmarks();
   const { isAuthenticated } = useAuth();
   const [bookmarkId, setBookmarkId] = useState<string | null>(null);
+  const [bookmarkData, setBookmarkData] = useState<any>(null);
   const [mangaInfo, setMangaInfo] = useState<any>(null);
 
   useEffect(() => {
@@ -120,11 +121,9 @@ export default function ChapterReader() {
         const mangaData = await mangaResponse.json();
         const mangaHid = mangaData.comic.hid;
 
-        setMangaInfo(mangaData.comic);
-
-        // 4. Fetch all chapters to have complete data for navigation
+        setMangaInfo(mangaData.comic); // 4. Fetch all chapters to have complete data for navigation
         const chaptersResponse = await fetch(
-          `/api/manga/comic/${mangaHid}/chapters?limit=100&chap-order=0&lang=en`
+          `/api/manga/comic/${mangaHid}/chapters?limit=9999&chap-order=0&lang=en`
         );
         if (!chaptersResponse.ok)
           throw new Error(`Failed to fetch chapters list`);
@@ -289,18 +288,40 @@ export default function ChapterReader() {
       clearTimeout(timeout);
     };
   }, []);
-
   const updateProgress = async (chapterNumber: string, chapterHid: string) => {
     if (!isAuthenticated || !bookmarkId) return;
 
     try {
-      await updateReadingProgress(bookmarkId, chapterNumber, chapterHid);
-      console.log(`Updated reading progress to chapter ${chapterNumber}`);
+      const lastReadChapter = bookmarkData?.last_read_chapter;
+
+      // Only update if current chapter is greater than last read chapter
+      if (
+        !lastReadChapter ||
+        parseFloat(chapterNumber) > parseFloat(lastReadChapter)
+      ) {
+        const success = await updateReadingProgress(
+          bookmarkId,
+          chapterNumber,
+          chapterHid
+        );
+        if (success) {
+          // Update local bookmark data
+          setBookmarkData((prev: any) => ({
+            ...prev,
+            last_read_chapter: chapterNumber,
+            last_read_chapter_hid: chapterHid,
+          }));
+          console.log(`Updated reading progress to chapter ${chapterNumber}`);
+        }
+      } else {
+        console.log(
+          `Chapter ${chapterNumber} is not greater than last read chapter ${lastReadChapter}, skipping update`
+        );
+      }
     } catch (error) {
       console.error("Failed to update reading progress:", error);
     }
   };
-
   // Add this function to check if manga is bookmarked and get bookmark ID
   const checkIfBookmarked = async (mangaId: string) => {
     if (!isAuthenticated) return;
@@ -309,6 +330,7 @@ export default function ChapterReader() {
       const result = await checkBookmark(mangaId);
       if (result.isBookmarked && result.bookmarkData?.id) {
         setBookmarkId(result.bookmarkData.id);
+        setBookmarkData(result.bookmarkData);
       }
     } catch (error) {
       console.error("Failed to check bookmark status:", error);

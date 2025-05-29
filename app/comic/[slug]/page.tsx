@@ -1,3 +1,4 @@
+//comic/[slug]/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -63,7 +64,6 @@ export default function MangaReader() {
       const mangaHid = mangaData.comic.hid;
       setMangaInfo(mangaData.comic);
 
-      // Set recommendations from the API response
       if (mangaData.comic.recommendations) {
         setRecommendations(mangaData.comic.recommendations);
       }
@@ -113,7 +113,6 @@ export default function MangaReader() {
     };
   }, [slug, chapterOrder]);
 
-  // Filter and paginate chapters
   const filteredChapters = chapters.filter((chapter) => {
     const matchesChapter = searchTerm
       ? chapter.chap.trim().toLowerCase() === searchTerm.trim().toLowerCase()
@@ -141,11 +140,9 @@ export default function MangaReader() {
   };
 
   useEffect(() => {
-    // Update unique groups when chapters change
     const groups = new Set<string>();
     if (chapters && Array.isArray(chapters)) {
       chapters.forEach((chapter) => {
-        // Add null check for group_name array
         if (chapter.group_name && Array.isArray(chapter.group_name)) {
           chapter.group_name.forEach((group) => {
             groups.add(group);

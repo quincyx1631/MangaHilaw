@@ -42,7 +42,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const router = useRouter();
   const { toast } = useToast();
 
-  // Initialize auth state from localStorage on mount
   useEffect(() => {
     const initializeAuth = () => {
       try {
@@ -70,6 +69,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     initializeAuth();
   }, []);
 
+  useEffect(() => {
+    const handleForcedLogout = () => {
+      setState({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      });
+
+      toast({
+        title: "Session expired",
+        description: "Your session has expired. Please log in again.",
+        variant: "destructive",
+      });
+    };
+
+    window.addEventListener("auth-logout", handleForcedLogout);
+
+    return () => {
+      window.removeEventListener("auth-logout", handleForcedLogout);
+    };
+  }, [toast]);
+
   // Login function
   const login = useCallback(
     async (credentials: LoginCredentials) => {
@@ -81,18 +104,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           credentials
         );
 
-        // Check if the response is successful and contains the expected data
         if (!response.data.success) {
           throw new Error(response.data.message || "Login failed");
         }
 
         const { data } = response.data;
-
         if (!data || !data.session?.access_token || !data.user) {
           throw new Error("Invalid response from server");
         }
 
-        // Save auth data to localStorage
         localStorage.setItem("token", data.session.access_token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
@@ -112,22 +132,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           variant: "default",
         });
 
-        return; // Successfully logged in
+        return;
       } catch (error) {
         console.error("Login error:", error);
         let errorMessage = "Login failed. Please try again.";
 
         if (axios.isAxiosError(error)) {
-          // Handle Axios errors
           if (error.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
             errorMessage =
               error.response.data?.error?.message ||
               error.response.data?.message ||
               "Invalid credentials";
           } else if (error.request) {
-            // The request was made but no response was received
             errorMessage =
               "No response from server. Please check your connection.";
           }
@@ -138,9 +154,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          isAuthenticated: false, // Ensure this is set to false
-          user: null, // Clear any user data
-          token: null, // Clear any token
+          isAuthenticated: false,
+          user: null,
+          token: null,
           error: errorMessage,
         }));
 
@@ -233,7 +249,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         error: null,
       });
 
-      // Redirect to home page
       router.push("/");
     }
   }, [router, state.user, toast]);
