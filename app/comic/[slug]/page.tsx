@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useParams } from "next/navigation";
 import { BookmarkButton } from "@/components/bookmark-button";
 import { MangaRecommendations } from "@/app/components/reader/recommendations";
+import { getStatusText } from "@/app/utils/helpers";
 
 import type {
   Chapter,
@@ -134,6 +135,12 @@ export default function MangaReader() {
   const totalFiltered = filteredChapters.length;
   const totalPages = Math.ceil(totalFiltered / chaptersPerPage);
 
+  useEffect(() => {
+    if (page > totalPages && totalPages > 0) {
+      setPage(1);
+    }
+  }, [page, totalPages]);
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     window.scrollTo(0, 0);
@@ -176,23 +183,6 @@ export default function MangaReader() {
       month: "short",
       day: "numeric",
     });
-  };
-
-  const getStatusText = (status: number) => {
-    switch (status) {
-      case 0:
-        return "Unknown";
-      case 1:
-        return "Ongoing";
-      case 2:
-        return "Completed";
-      case 3:
-        return "Cancelled";
-      case 4:
-        return "Hiatus";
-      default:
-        return "Unknown";
-    }
   };
 
   const getCoverImage = (covers: MangaCover[]) => {
@@ -355,14 +345,20 @@ export default function MangaReader() {
                     type="text"
                     placeholder="Search by chapter number..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setPage(1); // Reset to page 1 when searching
+                    }}
                     className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
                 <div className="flex-1">
                   <select
                     value={searchGroup}
-                    onChange={(e) => setSearchGroup(e.target.value)}
+                    onChange={(e) => {
+                      setSearchGroup(e.target.value);
+                      setPage(1); // Reset to page 1 when filtering by group
+                    }}
                     className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <option value="">All Scanlation Groups</option>
@@ -402,6 +398,7 @@ export default function MangaReader() {
                     onClick={() => {
                       setSearchTerm("");
                       setSearchGroup("");
+                      setPage(1); // Reset to page 1 when clearing filters
                     }}
                   >
                     Clear Filters

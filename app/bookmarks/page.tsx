@@ -19,6 +19,11 @@ import { Badge } from "@/components/ui/badge";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useAuth } from "@/context/auth-context";
 import type { Bookmark } from "@/app/types/bookmark";
+import {
+  getStatusText,
+  getStatusColor,
+  getMangaType,
+} from "@/app/utils/helpers";
 
 export default function BookmarksPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,49 +49,6 @@ export default function BookmarksPage() {
       setFilteredBookmarks(bookmarks);
     }
   }, [bookmarks, searchTerm]);
-
-  const getStatusText = (status: number) => {
-    switch (status) {
-      case 1:
-        return "Ongoing";
-      case 2:
-        return "Completed";
-      case 3:
-        return "Cancelled";
-      case 4:
-        return "Hiatus";
-      default:
-        return "Unknown";
-    }
-  };
-
-  const getStatusColor = (status: number) => {
-    switch (status) {
-      case 1:
-        return "bg-blue-500";
-      case 2:
-        return "bg-green-500";
-      case 3:
-        return "bg-red-500";
-      case 4:
-        return "bg-amber-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const getMangaType = (countryCode: string) => {
-    switch (countryCode.toLowerCase()) {
-      case "jp":
-        return "Manga";
-      case "kr":
-        return "Manhwa";
-      case "cn":
-        return "Manhua";
-      default:
-        return "International";
-    }
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

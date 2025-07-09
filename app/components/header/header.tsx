@@ -34,6 +34,7 @@ import {
 import SignInModal from "@/app/components/auth/signin";
 import RegisterModal from "@/app/components/auth/register";
 import { useAuth } from "@/context/auth-context";
+import { getStatusText, getStatusColor } from "@/app/utils/helpers";
 
 export default function Header() {
   const pathname = usePathname();
@@ -191,36 +192,6 @@ export default function Header() {
             result.md_covers && result.md_covers.length > 0
               ? result.md_covers[0].b2key
               : null;
-
-          const getStatusText = (statusCode: number) => {
-            switch (statusCode) {
-              case 1:
-                return "Ongoing";
-              case 2:
-                return "Completed";
-              case 3:
-                return "Cancelled";
-              case 4:
-                return "Hiatus";
-              default:
-                return "Unknown";
-            }
-          };
-
-          const getStatusColor = (statusCode: number) => {
-            switch (statusCode) {
-              case 1:
-                return "text-blue-500";
-              case 2:
-                return "text-green-500";
-              case 3:
-                return "text-red-500";
-              case 4:
-                return "text-amber-500";
-              default:
-                return "text-gray-500";
-            }
-          };
 
           return (
             <Link

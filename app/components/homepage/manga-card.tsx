@@ -3,55 +3,17 @@ import Image from "next/image";
 import { Book, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { MangaChapter } from "@/app/types/manga";
+import {
+  getStatusText,
+  getStatusColor,
+  getMangaType,
+} from "@/app/utils/helpers";
 
 interface MangaCardProps {
   manga: MangaChapter;
 }
 
 export function MangaCard({ manga }: MangaCardProps) {
-  const getStatusText = (statusCode: number) => {
-    switch (statusCode) {
-      case 1:
-        return "Ongoing";
-      case 2:
-        return "Completed";
-      case 3:
-        return "Cancelled";
-      case 4:
-        return "Hiatus";
-      default:
-        return "Unknown";
-    }
-  };
-
-  const getStatusColor = (statusCode: number) => {
-    switch (statusCode) {
-      case 1:
-        return "bg-blue-500";
-      case 2:
-        return "bg-green-500";
-      case 3:
-        return "bg-red-500";
-      case 4:
-        return "bg-amber-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const getMangaType = (countryCode: string) => {
-    switch (countryCode.toLowerCase()) {
-      case "jp":
-        return "Manga";
-      case "kr":
-        return "Manhwa";
-      case "cn":
-        return "Manhua";
-      default:
-        return "International";
-    }
-  };
-
   const getRelativeTime = (dateString: string) => {
     const now = new Date();
     const past = new Date(dateString);

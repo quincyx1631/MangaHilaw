@@ -21,6 +21,11 @@ import {
   getCoverImageUrl,
   type MangaSearchResult,
 } from "@/app/components/header/search";
+import {
+  getStatusText,
+  getStatusColor,
+  getMangaType,
+} from "@/app/utils/helpers";
 
 export default function SearchPage() {
   const router = useRouter();
@@ -49,11 +54,10 @@ export default function SearchPage() {
         query: searchTerm,
         page,
         limit,
-        showAll: true, // Show all results for advanced search
+        showAll: true,
       });
 
       setResults(searchResults);
-      // Estimate total results - in a real app, this would come from the API
       setTotalResults(
         searchResults.length === limit ? limit * 10 : searchResults.length
       );
@@ -74,50 +78,6 @@ export default function SearchPage() {
   const handlePageChange = (page: number) => {
     router.push(`/search?q=${encodeURIComponent(query)}&page=${page}`);
   };
-
-  const getMangaType = (country: string) => {
-    switch (country) {
-      case "jp":
-        return "Manga";
-      case "kr":
-        return "Manhwa";
-      case "cn":
-        return "Manhua";
-      default:
-        return "Comic";
-    }
-  };
-
-  const getStatusText = (statusCode: number) => {
-    switch (statusCode) {
-      case 1:
-        return "Ongoing";
-      case 2:
-        return "Completed";
-      case 3:
-        return "Cancelled";
-      case 4:
-        return "Hiatus";
-      default:
-        return "Unknown";
-    }
-  };
-
-  const getStatusColor = (statusCode: number) => {
-    switch (statusCode) {
-      case 1:
-        return "bg-blue-500";
-      case 2:
-        return "bg-green-500";
-      case 3:
-        return "bg-red-500";
-      case 4:
-        return "bg-amber-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-8">

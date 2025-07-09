@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Book, Clock } from "lucide-react";
 import type { MangaChapter } from "@/app/types/manga";
+import { getStatusText, getStatusColor } from "@/app/utils/helpers";
 
 interface NewMangaItemProps {
   manga: MangaChapter;
@@ -12,38 +13,6 @@ export function NewMangaItem({ manga }: NewMangaItemProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
-
-  // Get status text based on status code
-  const getStatusText = (statusCode: number) => {
-    switch (statusCode) {
-      case 1:
-        return "Ongoing";
-      case 2:
-        return "Completed";
-      case 3:
-        return "Cancelled";
-      case 4:
-        return "Hiatus";
-      default:
-        return "Unknown";
-    }
-  };
-
-  // Get status color based on status code
-  const getStatusColor = (statusCode: number) => {
-    switch (statusCode) {
-      case 1:
-        return "text-blue-500";
-      case 2:
-        return "text-green-500";
-      case 3:
-        return "text-red-500";
-      case 4:
-        return "text-amber-500";
-      default:
-        return "text-gray-500";
-    }
   };
 
   const coverKey = manga.md_comics?.md_covers?.[0]?.b2key;

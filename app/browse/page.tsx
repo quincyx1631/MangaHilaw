@@ -42,6 +42,11 @@ import {
   themesList,
   formatsList,
 } from "@/app/types/browse";
+import {
+  getStatusText,
+  getStatusColor,
+  getMangaType,
+} from "@/app/utils/helpers";
 
 export default function BrowsePage() {
   const router = useRouter();
@@ -409,51 +414,6 @@ export default function BrowsePage() {
     setFilters(pendingFilters);
     updateUrl(pendingFilters);
     setShowFilters(false);
-  };
-
-  const getStatusText = (statusCode: number) => {
-    switch (statusCode) {
-      case 1:
-        return "Ongoing";
-      case 2:
-        return "Completed";
-      case 3:
-        return "Cancelled";
-      case 4:
-        return "Hiatus";
-      default:
-        return "Unknown";
-    }
-  };
-
-  const getStatusColor = (statusCode: number) => {
-    switch (statusCode) {
-      case 1:
-        return "bg-blue-500";
-      case 2:
-        return "bg-green-500";
-      case 3:
-        return "bg-red-500";
-      case 4:
-        return "bg-amber-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  const getMangaType = (countryCode: string) => {
-    switch (countryCode.toLowerCase()) {
-      case "jp":
-        return "Manga";
-      case "kr":
-        return "Manhwa";
-      case "cn":
-        return "Manhua";
-      case "gb":
-        return "Webtoon";
-      default:
-        return "International";
-    }
   };
 
   return (
