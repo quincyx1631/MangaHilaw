@@ -573,7 +573,7 @@ export default function ChapterReader() {
                                     {chapter.group_name &&
                                       chapter.group_name.length > 0 && (
                                         <span className="text-xs bg-accent/50 px-2 py-0.5 rounded-full ml-2">
-                                          {chapter.group_name[0]}
+                                          {chapter.group_name[0] || "Unknown"}
                                         </span>
                                       )}
                                   </div>
