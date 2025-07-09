@@ -439,7 +439,7 @@ export default function MangaReader() {
                             variant="outline"
                             className="text-xs px-1.5 py-0 sm:px-2 sm:py-0.5"
                           >
-                            {chapter.group_name[0]}
+                            {chapter.group_name?.[0] || "Unknown"}
                           </Badge>
                           <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                         </div>
