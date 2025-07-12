@@ -1,3 +1,5 @@
+export type ReadingStatus = 'plan_to_read' | 'reading' | 'on_hold' | 'dropped' | 'completed';
+
 export interface Bookmark {
   id: string
   user_id: string
@@ -13,6 +15,7 @@ export interface Bookmark {
   last_read_at?: string
   created_at: string
   updated_at: string
+  reading_status?: ReadingStatus;
 }
 
 export interface BookmarkInput {
@@ -25,6 +28,7 @@ export interface BookmarkInput {
   manga_country?: string
   last_read_chapter?: string
   last_read_chapter_hid?: string
+  reading_status?: ReadingStatus;
 }
 
 export interface BookmarkResponse {
@@ -46,5 +50,6 @@ export interface BookmarkCheckResponse {
     id: string
     last_read_chapter?: string
     last_read_at?: string
+    reading_status?: ReadingStatus;
   } | null
 }

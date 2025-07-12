@@ -10,44 +10,78 @@ import {
   Search,
   Grid3X3,
   List,
+  Filter,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useAuth } from "@/context/auth-context";
-import type { Bookmark } from "@/app/types/bookmark";
+import type { Bookmark, ReadingStatus } from "@/app/types/bookmark";
 import {
   getStatusText,
   getStatusColor,
   getMangaType,
 } from "@/app/utils/helpers";
 
+const readingStatusLabels: Record<ReadingStatus, string> = {
+  plan_to_read: "Plan to Read",
+  reading: "Reading",
+  on_hold: "On Hold",
+  dropped: "Dropped",
+  completed: "Completed",
+};
+
+const readingStatusColors: Record<ReadingStatus, string> = {
+  plan_to_read: "bg-gray-500",
+  reading: "bg-blue-500",
+  on_hold: "bg-yellow-500",
+  dropped: "bg-red-500",
+  completed: "bg-green-500",
+};
+
 export default function BookmarksPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredBookmarks, setFilteredBookmarks] = useState<Bookmark[]>([]);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedReadingStatus, setSelectedReadingStatus] = useState<
+    ReadingStatus | "all"
+  >("all");
 
-  const { bookmarks, loading, fetchBookmarks, removeBookmark } = useBookmarks();
+  const { bookmarks, loading, fetchBookmarks, fetchBookmarksByStatus, removeBookmark } = useBookmarks();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchBookmarks();
+      if (selectedReadingStatus === "all") {
+        fetchBookmarks();
+      } else {
+        fetchBookmarksByStatus(selectedReadingStatus);
+      }
     }
-  }, [isAuthenticated, fetchBookmarks]);
+  }, [isAuthenticated, selectedReadingStatus, fetchBookmarks, fetchBookmarksByStatus]);
 
   useEffect(() => {
+    let filtered = bookmarks;
+    
+    // Apply search filter
     if (searchTerm) {
-      const filtered = bookmarks.filter((bookmark) =>
+      filtered = filtered.filter((bookmark) =>
         bookmark.manga_title.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredBookmarks(filtered);
-    } else {
-      setFilteredBookmarks(bookmarks);
     }
+    
+    setFilteredBookmarks(filtered);
   }, [bookmarks, searchTerm]);
 
   const formatDate = (dateString: string) => {
@@ -57,6 +91,23 @@ export default function BookmarksPage() {
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const getReadingStatusStats = () => {
+    const stats = bookmarks.reduce((acc, bookmark) => {
+      const status = bookmark.reading_status || "plan_to_read";
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<ReadingStatus, number>);
+    
+    return stats;
+  };
+
+  const hasActiveFilters = selectedReadingStatus !== "all" || searchTerm !== "";
+
+  const clearAllFilters = () => {
+    setSelectedReadingStatus("all");
+    setSearchTerm("");
   };
 
   const handleRemoveBookmark = async (
@@ -104,6 +155,11 @@ export default function BookmarksPage() {
             <h1 className="text-2xl font-bold">My Bookmarks</h1>
             <p className="text-sm text-muted-foreground">
               {filteredBookmarks.length} of {bookmarks.length} bookmarks
+              {selectedReadingStatus !== "all" && (
+                <span className="ml-1">
+                  · {readingStatusLabels[selectedReadingStatus]}
+                </span>
+              )}
             </p>
           </div>
 
@@ -128,16 +184,105 @@ export default function BookmarksPage() {
           </div>
         </div>
 
-        {/* Search bar */}
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search your bookmarks..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        {/* Filters Row */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          {/* Search bar */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search your bookmarks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Reading Status Filter */}
+          <div className="flex items-center gap-2 sm:min-w-[200px]">
+            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Select
+              value={selectedReadingStatus}
+              onValueChange={(value) =>
+                setSelectedReadingStatus(value as ReadingStatus | "all")
+              }
+            >
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  <div className="flex items-center justify-between w-full">
+                    <span>All Status</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({bookmarks.length})
+                    </span>
+                  </div>
+                </SelectItem>
+                {Object.entries(readingStatusLabels).map(([status, label]) => {
+                  const count = getReadingStatusStats()[status as ReadingStatus] || 0;
+                  return (
+                    <SelectItem key={status} value={status}>
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              readingStatusColors[status as ReadingStatus]
+                            }`}
+                          />
+                          <span>{label}</span>
+                        </div>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          ({count})
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        {/* Active Filters */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm font-medium">Active filters:</span>
+            <div className="flex items-center gap-2">
+              {selectedReadingStatus !== "all" && (
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
+                  {readingStatusLabels[selectedReadingStatus]}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSelectedReadingStatus("all")}
+                  />
+                </Badge>
+              )}
+              {searchTerm && (
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
+                  Search: "{searchTerm}"
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setSearchTerm("")}
+                  />
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="h-6 px-2 text-xs"
+              >
+                Clear all
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -181,18 +326,28 @@ export default function BookmarksPage() {
         <div className="text-center py-8 sm:py-12">
           <BookOpen className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
           <h2 className="text-lg sm:text-xl font-semibold mb-2">
-            {searchTerm ? "No bookmarks found" : "No bookmarks yet"}
+            {bookmarks.length === 0
+              ? "No bookmarks yet"
+              : hasActiveFilters
+              ? "No bookmarks match your filters"
+              : "No bookmarks found"}
           </h2>
           <p className="text-sm text-muted-foreground mb-4 sm:mb-6">
-            {searchTerm
-              ? "Try adjusting your search terms"
-              : "Start exploring manga and bookmark your favorites!"}
+            {bookmarks.length === 0
+              ? "Start exploring manga and bookmark your favorites!"
+              : hasActiveFilters
+              ? "Try adjusting your search terms or filters"
+              : "Try adjusting your search terms"}
           </p>
-          {!searchTerm && (
+          {bookmarks.length === 0 ? (
             <Button asChild>
               <Link href="/">Browse Manga</Link>
             </Button>
-          )}
+          ) : hasActiveFilters ? (
+            <Button onClick={clearAllFilters} variant="outline">
+              Clear Filters
+            </Button>
+          ) : null}
         </div>
       ) : viewMode === "grid" ? (
         /* Grid View */
@@ -226,6 +381,17 @@ export default function BookmarksPage() {
                       {getStatusText(bookmark.manga_status)}
                     </div>
 
+                    {/* Reading Status badge */}
+                    {bookmark.reading_status && (
+                      <div
+                        className={`absolute top-7 right-1 px-1.5 py-0.5 rounded text-xs font-medium text-white ${
+                          readingStatusColors[bookmark.reading_status]
+                        }`}
+                      >
+                        {readingStatusLabels[bookmark.reading_status]}
+                      </div>
+                    )}
+
                     {/* Type badge */}
                     <div className="absolute top-1 left-1 bg-black/70 text-white px-1.5 py-0.5 rounded text-xs">
                       {getMangaType(bookmark.manga_country)}
@@ -256,6 +422,19 @@ export default function BookmarksPage() {
                       <BookOpen className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate">
                         Ch. {bookmark.last_read_chapter}
+                      </span>
+                    </div>
+                  )}
+
+                  {bookmark.reading_status && (
+                    <div className="flex items-center gap-1 text-xs mb-1">
+                      <div
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                          readingStatusColors[bookmark.reading_status]
+                        }`}
+                      />
+                      <span className="text-muted-foreground truncate">
+                        {readingStatusLabels[bookmark.reading_status]}
                       </span>
                     </div>
                   )}
@@ -321,6 +500,16 @@ export default function BookmarksPage() {
                           >
                             {getStatusText(bookmark.manga_status)}
                           </Badge>
+                          {bookmark.reading_status && (
+                            <Badge
+                              variant="outline"
+                              className={`text-xs text-white border-0 ${
+                                readingStatusColors[bookmark.reading_status]
+                              }`}
+                            >
+                              {readingStatusLabels[bookmark.reading_status]}
+                            </Badge>
+                          )}
                         </div>
 
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-muted-foreground">

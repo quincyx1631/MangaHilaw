@@ -10,6 +10,7 @@ import type {
   BookmarkResponse,
   BookmarkCheckResponse,
 } from "@/app/types/bookmark";
+import { ReadingStatus } from "@/app/types/bookmark";
 
 export const useBookmarks = () => {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -212,6 +213,95 @@ export const useBookmarks = () => {
     [isAuthenticated, token, fetchBookmarks]
   );
 
+  // Update reading status
+  const updateReadingStatus = useCallback(
+    async (
+      bookmarkId: string,
+      readingStatus: ReadingStatus,
+      skipRefetch = false
+    ) => {
+      if (!isAuthenticated || !token) return false;
+
+      setLoading(true);
+
+      try {
+        const response = await axiosInstance.put(
+          `/bookmarks/${bookmarkId}/status`,
+          { reading_status: readingStatus },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.data.success) {
+          toast({
+            title: "Status updated",
+            description: `Reading status updated to ${readingStatus.replace(
+              "_",
+              " "
+            )}`,
+            variant: "default",
+          });
+
+          // Only refetch if not skipped (useful for single bookmark updates)
+          if (!skipRefetch) {
+            await fetchBookmarks();
+          }
+          return true;
+        }
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message || "Failed to update reading status";
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+
+      return false;
+    },
+    [isAuthenticated, token, toast, fetchBookmarks]
+  );
+
+  // Get bookmarks by reading status
+  const fetchBookmarksByStatus = useCallback(
+    async (readingStatus: ReadingStatus, page = 1, limit = 20) => {
+      if (!isAuthenticated || !token) return;
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await axiosInstance.get<BookmarkResponse>(
+          `/bookmarks?page=${page}&limit=${limit}&reading_status=${readingStatus}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setBookmarks(response.data.data);
+          return response.data.data;
+        }
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message || "Failed to fetch bookmarks";
+        setError(errorMessage);
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isAuthenticated, token, toast]
+  );
+
   return {
     bookmarks,
     loading,
@@ -221,5 +311,7 @@ export const useBookmarks = () => {
     removeBookmark,
     checkBookmark,
     updateReadingProgress,
+    updateReadingStatus, // Add this
+    fetchBookmarksByStatus,
   };
 };

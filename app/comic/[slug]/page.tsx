@@ -310,7 +310,9 @@ export default function MangaReader() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <Button className="w-full sm:w-auto">Read First Chapter</Button>
+                <Button className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]">
+                  Read First Chapter
+                </Button>
                 <BookmarkButton
                   mangaData={{
                     manga_id: mangaInfo.id.toString(),
@@ -322,7 +324,8 @@ export default function MangaReader() {
                     manga_country: mangaInfo.country,
                   }}
                   variant="outline"
-                  className="w-full sm:w-auto"
+                  size="default"
+                  className="w-full sm:w-auto sm:flex-1 sm:max-w-[200px]"
                   showText={true}
                 />
               </div>
