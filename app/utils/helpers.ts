@@ -60,7 +60,11 @@ export const getStatusColor = (statusCode: number) => {
     }
   }
 
-export const getMangaType = (countryCode: string) => {
+export const getMangaType = (countryCode: string | null) => {
+    if (!countryCode) {
+      return "International";
+    }
+    
     switch (countryCode.toLowerCase()) {
       case "jp":
         return "Manga";
