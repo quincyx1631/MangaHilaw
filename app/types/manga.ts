@@ -48,7 +48,17 @@ export interface MangaCover {
     count?: number
   }
   
-  // API Response Types
+  export interface TrendingManga{
+    id: string | number;
+    title: string;
+    slug: string;
+    status?: number;
+    country?: string;
+    md_covers?: Array<{ b2key: string }>;
+    created_at?: string;
+    updated_at: string;
+  }
+
   export interface PaginationResponse {
     limit: number
     offset: number

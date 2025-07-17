@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -14,7 +13,10 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Grid3X3, List } from "lucide-react";
 import { MangaCard } from "./components/homepage/manga-card";
+import { MangaListCard } from "./components/homepage/manga-list-card";
+import { TrendingCarousel } from "./components/homepage/trending-carousel";
 import type { MangaChapter } from "./types/manga";
 
 export default function HomePage() {
@@ -25,33 +27,29 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(10);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const itemsPerPage = 30;
 
   useEffect(() => {
     const fetchManga = async () => {
       setLoading(true);
       setError(null);
-
       try {
         console.log("Fetching hot manga data...");
         const hotResponse = await fetch(
           `/api/manga/chapter/?page=${currentPage}&order=hot&limit=${itemsPerPage}`
         );
-
         if (!hotResponse.ok) {
           throw new Error(`API responded with status: ${hotResponse.status}`);
         }
-
         const hotData = await hotResponse.json();
         console.log("Hot manga data received:", hotData.length || "object");
 
         let mangaList: MangaChapter[] = [];
-
         if (Array.isArray(hotData)) {
           mangaList = hotData;
         } else if (hotData.chapters && Array.isArray(hotData.chapters)) {
           mangaList = hotData.chapters;
-
           if (hotData.pagination) {
             const totalItems = hotData.pagination.total;
             setTotalPages(Math.ceil(totalItems / itemsPerPage));
@@ -108,7 +106,6 @@ export default function HomePage() {
       i++
     ) {
       if (i === 1 || i === totalPages) continue;
-
       items.push(
         <PaginationItem key={i}>
           <PaginationLink
@@ -156,8 +153,33 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-6">
+        {/* Trending Carousel Section */}
+        <TrendingCarousel />
+
+        {/* Recently Added Section */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-4">Recently Added</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">Recently Added</h1>
+            {/* View mode toggle */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === "grid" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className="w-12 h-8"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="w-12 h-8"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
           {error ? (
             <div className="p-8 text-center">
@@ -167,21 +189,46 @@ export default function HomePage() {
               </Button>
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {Array(itemsPerPage > 20 ? 20 : itemsPerPage)
-                .fill(0)
-                .map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-[240px] w-full rounded-md" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </div>
-                ))}
-            </div>
-          ) : (
+            viewMode === "grid" ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {Array(itemsPerPage > 20 ? 20 : itemsPerPage)
+                  .fill(0)
+                  .map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="h-[240px] w-full rounded-md" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                {Array(10)
+                  .fill(0)
+                  .map((_, i) => (
+                    <div key={i} className="border rounded-lg p-4">
+                      <div className="flex gap-4">
+                        <Skeleton className="w-16 h-20 rounded" />
+                        <div className="flex-1">
+                          <Skeleton className="h-4 w-3/4 mb-2" />
+                          <Skeleton className="h-3 w-1/2 mb-1" />
+                          <Skeleton className="h-3 w-1/3" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )
+          ) : viewMode === "grid" ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {hotManga.map((manga) => (
                 <MangaCard key={manga.id} manga={manga} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              {hotManga.map((manga) => (
+                <MangaListCard key={manga.id} manga={manga} />
               ))}
             </div>
           )}
@@ -203,9 +250,7 @@ export default function HomePage() {
                   }
                 />
               </PaginationItem>
-
               {renderPaginationItems()}
-
               <PaginationItem>
                 <PaginationNext
                   href={`/?page=${Math.min(totalPages, currentPage + 1)}`}
@@ -230,7 +275,10 @@ export default function HomePage() {
 
       <footer className="border-t py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} MangaHilaw. All rights reserved.</p>
+          <p>
+            © 2025. MangaHilaw does not store any files on our server, we only
+            linked to the media which is hosted on 3rd party services.
+          </p>
         </div>
       </footer>
     </div>
