@@ -23,7 +23,7 @@ import {
 } from "@/app/components/header/search";
 import {
   getStatusText,
-  getStatusColor,
+  getStatusColorClass,
   getMangaType,
 } from "@/app/utils/helpers";
 
@@ -155,8 +155,9 @@ export default function SearchPage() {
                             </Badge>
                             {manga.status && (
                               <Badge
-                                className={`text-xs text-white ${getStatusColor(
-                                  manga.status
+                                className={`text-xs text-white ${getStatusColorClass(
+                                  manga.status,
+                                  true
                                 )}`}
                               >
                                 {getStatusText(manga.status)}

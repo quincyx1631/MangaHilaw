@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Book, Clock } from "lucide-react";
 import type { MangaChapter } from "@/app/types/manga";
-import { getStatusText, getStatusColor } from "@/app/utils/helpers";
+import { getStatusText, getStatusColorClass } from "@/app/utils/helpers";
 
 interface NewMangaItemProps {
   manga: MangaChapter;
@@ -55,7 +55,7 @@ export function NewMangaItem({ manga }: NewMangaItemProps) {
           {/* Status indicator */}
           {manga.md_comics?.status && (
             <span
-              className={`text-xs font-medium ${getStatusColor(
+              className={`text-xs font-medium ${getStatusColorClass(
                 manga.md_comics.status
               )}`}
             >

@@ -98,7 +98,6 @@ export function BookmarkButton({
     if (success) {
       setIsBookmarked(true);
       setReadingStatus(status);
-      // Re-check to get the bookmark ID
       const result = await checkBookmark(mangaData.manga_id);
       if (result.bookmarkData?.id) {
         setBookmarkId(result.bookmarkData.id);

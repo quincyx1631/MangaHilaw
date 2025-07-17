@@ -30,7 +30,7 @@ import { useAuth } from "@/context/auth-context";
 import type { Bookmark, ReadingStatus } from "@/app/types/bookmark";
 import {
   getStatusText,
-  getStatusColor,
+  getStatusColorClass,
   getMangaType,
 } from "@/app/utils/helpers";
 
@@ -58,7 +58,13 @@ export default function BookmarksPage() {
     ReadingStatus | "all"
   >("all");
 
-  const { bookmarks, loading, fetchBookmarks, fetchBookmarksByStatus, removeBookmark } = useBookmarks();
+  const {
+    bookmarks,
+    loading,
+    fetchBookmarks,
+    fetchBookmarksByStatus,
+    removeBookmark,
+  } = useBookmarks();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -69,18 +75,23 @@ export default function BookmarksPage() {
         fetchBookmarksByStatus(selectedReadingStatus);
       }
     }
-  }, [isAuthenticated, selectedReadingStatus, fetchBookmarks, fetchBookmarksByStatus]);
+  }, [
+    isAuthenticated,
+    selectedReadingStatus,
+    fetchBookmarks,
+    fetchBookmarksByStatus,
+  ]);
 
   useEffect(() => {
     let filtered = bookmarks;
-    
+
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter((bookmark) =>
         bookmark.manga_title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     setFilteredBookmarks(filtered);
   }, [bookmarks, searchTerm]);
 
@@ -99,7 +110,7 @@ export default function BookmarksPage() {
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {} as Record<ReadingStatus, number>);
-    
+
     return stats;
   };
 
@@ -219,7 +230,8 @@ export default function BookmarksPage() {
                   </div>
                 </SelectItem>
                 {Object.entries(readingStatusLabels).map(([status, label]) => {
-                  const count = getReadingStatusStats()[status as ReadingStatus] || 0;
+                  const count =
+                    getReadingStatusStats()[status as ReadingStatus] || 0;
                   return (
                     <SelectItem key={status} value={status}>
                       <div className="flex items-center justify-between w-full">
@@ -249,10 +261,7 @@ export default function BookmarksPage() {
             <span className="text-sm font-medium">Active filters:</span>
             <div className="flex items-center gap-2">
               {selectedReadingStatus !== "all" && (
-                <Badge
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
+                <Badge variant="secondary" className="flex items-center gap-1">
                   {readingStatusLabels[selectedReadingStatus]}
                   <X
                     className="h-3 w-3 cursor-pointer"
@@ -261,10 +270,7 @@ export default function BookmarksPage() {
                 </Badge>
               )}
               {searchTerm && (
-                <Badge
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
+                <Badge variant="secondary" className="flex items-center gap-1">
                   Search: "{searchTerm}"
                   <X
                     className="h-3 w-3 cursor-pointer"
@@ -374,8 +380,9 @@ export default function BookmarksPage() {
 
                     {/* Status badge */}
                     <div
-                      className={`absolute top-1 right-1 px-1.5 py-0.5 rounded text-xs font-medium text-white ${getStatusColor(
-                        bookmark.manga_status
+                      className={`absolute top-1 right-1 px-1.5 py-0.5 rounded text-xs font-medium text-white ${getStatusColorClass(
+                        bookmark.manga_status,
+                        true
                       )}`}
                     >
                       {getStatusText(bookmark.manga_status)}
@@ -494,8 +501,9 @@ export default function BookmarksPage() {
                           </Badge>
                           <Badge
                             variant="outline"
-                            className={`text-xs text-white border-0 ${getStatusColor(
-                              bookmark.manga_status
+                            className={`text-xs text-white border-0 ${getStatusColorClass(
+                              bookmark.manga_status,
+                              true
                             )}`}
                           >
                             {getStatusText(bookmark.manga_status)}

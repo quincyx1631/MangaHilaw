@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import type { MangaChapter } from "@/app/types/manga";
 import {
   getStatusText,
-  getStatusColor,
+  getStatusColorClass,
   getMangaType,
 } from "@/app/utils/helpers";
 
@@ -65,8 +65,9 @@ export function MangaCard({ manga }: MangaCardProps) {
               {/* Status badge */}
               {manga.md_comics?.status && (
                 <div
-                  className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium text-white ${getStatusColor(
-                    manga.md_comics.status
+                  className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium text-white ${getStatusColorClass(
+                    manga.md_comics.status,
+                    true
                   )}`}
                 >
                   {getStatusText(manga.md_comics.status)}
@@ -92,8 +93,11 @@ export function MangaCard({ manga }: MangaCardProps) {
             {manga.md_comics?.title || "Unknown Title"}
           </h3>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-gray-300 flex items-center">
-              <Book className="h-3 w-3 mr-1" /> Chapter {manga.chap}
+            <span className="text-xs text-gray-300 flex items-center gap-1">
+              <Book className="h-3 w-3" />
+              <span className="hidden sm:inline">Chapter</span>
+              <span className="sm:hidden">Ch.</span>
+              <span>{manga.chap}</span>
             </span>
             <span className="text-xs text-gray-300 bg-black/30 px-1.5 py-0.5 rounded">
               {mangaType}

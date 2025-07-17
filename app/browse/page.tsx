@@ -43,7 +43,7 @@ import {
 } from "@/app/types/browse";
 import {
   getStatusText,
-  getStatusColor,
+  getStatusColorClass,
   getMangaType,
 } from "@/app/utils/helpers";
 
@@ -1115,8 +1115,10 @@ export default function BrowsePage() {
                 })}
                 {filters.status !== undefined && (
                   <Badge
-                    variant="secondary"
-                    className="flex items-center gap-1"
+                    className={`flex items-center gap-1 text-white ${getStatusColorClass(
+                      filters.status,
+                      true
+                    )}`}
                   >
                     {getStatusText(filters.status)}
                     <button
@@ -1248,8 +1250,9 @@ export default function BrowsePage() {
                                   {/* Status badge */}
                                   {manga.status && (
                                     <div
-                                      className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium text-white ${getStatusColor(
-                                        manga.status
+                                      className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium text-white ${getStatusColorClass(
+                                        manga.status,
+                                        true
                                       )}`}
                                     >
                                       {getStatusText(manga.status)}
@@ -1360,8 +1363,9 @@ export default function BrowsePage() {
                                 </Badge>
                                 {manga.status && (
                                   <Badge
-                                    className={`text-xs text-white ${getStatusColor(
-                                      manga.status
+                                    className={`text-xs text-white ${getStatusColorClass(
+                                      manga.status,
+                                      true
                                     )}`}
                                   >
                                     {getStatusText(manga.status)}

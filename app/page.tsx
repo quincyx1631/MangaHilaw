@@ -186,7 +186,7 @@ export default function HomePage() {
             </div>
           )}
 
-          <Pagination className="mt-8">
+          <Pagination className="mt-8 mb-4">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
@@ -228,7 +228,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      <footer className="border-t py-6 mt-12">
+      <footer className="border-t py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} MangaHilaw. All rights reserved.</p>
         </div>

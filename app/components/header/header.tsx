@@ -34,7 +34,7 @@ import {
 import SignInModal from "@/app/components/auth/signin";
 import RegisterModal from "@/app/components/auth/register";
 import { useAuth } from "@/context/auth-context";
-import { getStatusText, getStatusColor } from "@/app/utils/helpers";
+import { getStatusText, getStatusColorClass } from "@/app/utils/helpers";
 
 export default function Header() {
   const pathname = usePathname();
@@ -237,7 +237,7 @@ export default function Header() {
                 <div className="flex items-center gap-2 mt-1">
                   {result.status && (
                     <span
-                      className={`text-xs font-medium ${getStatusColor(
+                      className={`text-xs font-medium ${getStatusColorClass(
                         result.status
                       )}`}
                     >
