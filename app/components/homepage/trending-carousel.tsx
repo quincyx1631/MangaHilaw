@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -13,53 +13,20 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { getStatusText, getStatusColorClass } from "@/app/utils/helpers";
+import { useMangaStore } from "@/store/manga-store";
 import type { TrendingManga } from "@/app/types/manga";
 
 export function TrendingCarousel() {
-  const [trendingManga, setTrendingManga] = useState<TrendingManga[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    trendingManga,
+    trendingLoading: loading,
+    trendingError: error,
+    fetchTrendingManga,
+  } = useMangaStore();
 
   useEffect(() => {
-    const fetchTrendingManga = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(
-          "/api/manga/top?day=180&type=trending&accept_mature_content=false"
-        );
-
-        if (!response.ok) {
-          throw new Error(`API responded with status: ${response.status}`);
-        }
-        const data = await response.json();
-        let mangaList: TrendingManga[] = [];
-        if (Array.isArray(data)) {
-          mangaList = data;
-        } else if (data["180"] && Array.isArray(data["180"])) {
-          mangaList = data["180"];
-        } else if (data["90"] && Array.isArray(data["90"])) {
-          mangaList = data["90"];
-        } else if (data["30"] && Array.isArray(data["30"])) {
-          mangaList = data["30"];
-        } else if (data["7"] && Array.isArray(data["7"])) {
-          mangaList = data["7"];
-        } else if (data.manga && Array.isArray(data.manga)) {
-          mangaList = data.manga;
-        } else if (data.data && Array.isArray(data.data)) {
-          mangaList = data.data;
-        }
-        setTrendingManga(mangaList.slice(0, 30));
-      } catch (error) {
-        console.error("Error fetching trending manga:", error);
-        setError("Failed to load trending manga.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTrendingManga();
-  }, []);
+  }, [fetchTrendingManga]);
 
   if (loading) {
     return (

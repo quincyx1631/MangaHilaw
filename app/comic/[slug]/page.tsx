@@ -20,27 +20,33 @@ import { useParams } from "next/navigation";
 import { BookmarkButton } from "@/components/bookmark-button";
 import { MangaRecommendations } from "@/app/components/reader/recommendations";
 import { getStatusText } from "@/app/utils/helpers";
+import { useMangaStore } from "@/store/manga-store";
 
 import type {
   Chapter,
-  ChapterResponse,
-  ComicResponse,
   MangaInfo,
   MangaCover,
   MangaGenre,
-  RecommendationCover,
-  RecommendationRelates,
   Recommendation,
 } from "@/app/types/mangaInfo";
 
 export default function MangaReader() {
-  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const { slug } = useParams() as { slug: string };
+  const {
+    mangaInfoLoading: loading,
+    mangaInfoError: error,
+    getMangaInfo,
+    fetchMangaInfo,
+    chaptersLoading,
+    chaptersError,
+    getChapters,
+    fetchChapters,
+    incrementRefreshCount,
+  } = useMangaStore();
   const [mangaInfo, setMangaInfo] = useState<MangaInfo | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [totalChapters, setTotalChapters] = useState(0);
-  const { slug } = useParams() as { slug: string };
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchGroup, setSearchGroup] = useState("");
@@ -49,39 +55,28 @@ export default function MangaReader() {
   const chaptersPerPage = 15;
 
   const fetchMangaData = async () => {
-    setLoading(true);
-    setError(null);
     console.log("Fetching manga data for slug:", slug);
 
     try {
-      const mangaResponse = await fetch(`/api/manga/comic/${slug}`);
-      if (!mangaResponse.ok) {
-        throw new Error(`Failed to fetch manga info: ${mangaResponse.status}`);
+      const mangaData = await fetchMangaInfo(slug);
+      if (!mangaData) {
+        throw new Error("Manga not found");
       }
-
-      const mangaData: ComicResponse = await mangaResponse.json();
-      console.log("Manga data received:", mangaData);
-
-      const mangaHid = mangaData.comic.hid;
       setMangaInfo(mangaData.comic);
 
       if (mangaData.comic.recommendations) {
         setRecommendations(mangaData.comic.recommendations);
       }
+      const mangaHid = mangaData.comic.hid;
+      const chaptersData = await fetchChapters(mangaHid, chapterOrder);
 
-      const chaptersResponse = await fetch(
-        `/api/manga/comic/${mangaHid}/chapters?limit=9999&page=1&chap-order=${chapterOrder}&lang=en`
-      );
-
-      if (!chaptersResponse.ok) {
-        throw new Error(`Failed to fetch chapters: ${chaptersResponse.status}`);
+      if (!chaptersData) {
+        throw new Error("No chapters found");
       }
 
-      const chaptersData: ChapterResponse = await chaptersResponse.json();
       console.log("Chapters received:", chaptersData.chapters.length);
 
       if (chaptersData.chapters.length === 0) {
-        setError("No chapters found.");
         setChapters([]);
         setTotalChapters(0);
         return;
@@ -91,11 +86,6 @@ export default function MangaReader() {
       setTotalChapters(chaptersData.total);
     } catch (err) {
       console.error("Error fetching data:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -206,19 +196,13 @@ export default function MangaReader() {
     const newOrder = chapterOrder === 0 ? 1 : 0;
     setChapterOrder(newOrder);
     setPage(1);
-
-    // Sort chapters client-side instead of refetching
     setChapters((prev) => {
       const sorted = [...prev].sort((a, b) => {
-        // Compare by publish date instead of chapter number for better sorting
         const dateA = new Date(a.publish_at).getTime();
         const dateB = new Date(b.publish_at).getTime();
-
         if (newOrder === 0) {
-          // Newest first (descending by date)
           return dateB - dateA;
         } else {
-          // Oldest first (ascending by date)
           return dateA - dateB;
         }
       });
@@ -350,7 +334,7 @@ export default function MangaReader() {
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
-                      setPage(1); // Reset to page 1 when searching
+                      setPage(1);
                     }}
                     className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
@@ -360,7 +344,7 @@ export default function MangaReader() {
                     value={searchGroup}
                     onChange={(e) => {
                       setSearchGroup(e.target.value);
-                      setPage(1); // Reset to page 1 when filtering by group
+                      setPage(1);
                     }}
                     className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
@@ -401,7 +385,7 @@ export default function MangaReader() {
                     onClick={() => {
                       setSearchTerm("");
                       setSearchGroup("");
-                      setPage(1); // Reset to page 1 when clearing filters
+                      setPage(1);
                     }}
                   >
                     Clear Filters

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,59 +17,33 @@ import { Grid3X3, List } from "lucide-react";
 import { MangaCard } from "./components/homepage/manga-card";
 import { MangaListCard } from "./components/homepage/manga-list-card";
 import { TrendingCarousel } from "./components/homepage/trending-carousel";
+import { useMangaStore } from "@/store/manga-store";
 import type { MangaChapter } from "./types/manga";
 
 export default function HomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const currentPage = Number(searchParams.get("page")) || 1;
-  const [hotManga, setHotManga] = useState<MangaChapter[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(10);
-  const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
-  const itemsPerPage = 30;
+  const currentPageParam = Number(searchParams.get("page")) || 1;
+
+  // Zustand store state
+  const {
+    hotManga,
+    hotMangaLoading: loading,
+    hotMangaError: error,
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    viewMode,
+    setViewMode,
+    fetchHotManga,
+    incrementRefreshCount,
+  } = useMangaStore();
 
   useEffect(() => {
-    const fetchManga = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        console.log("Fetching hot manga data...");
-        const hotResponse = await fetch(
-          `/api/manga/chapter/?page=${currentPage}&order=hot&limit=${itemsPerPage}`
-        );
-        if (!hotResponse.ok) {
-          throw new Error(`API responded with status: ${hotResponse.status}`);
-        }
-        const hotData = await hotResponse.json();
-        console.log("Hot manga data received:", hotData.length || "object");
-
-        let mangaList: MangaChapter[] = [];
-        if (Array.isArray(hotData)) {
-          mangaList = hotData;
-        } else if (hotData.chapters && Array.isArray(hotData.chapters)) {
-          mangaList = hotData.chapters;
-          if (hotData.pagination) {
-            const totalItems = hotData.pagination.total;
-            setTotalPages(Math.ceil(totalItems / itemsPerPage));
-          }
-        } else {
-          mangaList = [hotData];
-        }
-
-        const limitedData = mangaList.slice(0, itemsPerPage);
-        setHotManga(limitedData);
-      } catch (error) {
-        console.error("Error fetching manga:", error);
-        setError("Failed to load manga data. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchManga();
-  }, [currentPage]);
+    // Track page refresh/initial load
+    incrementRefreshCount();
+    fetchHotManga(currentPageParam);
+  }, [currentPageParam, fetchHotManga, incrementRefreshCount]);
 
   const handlePageChange = (page: number) => {
     router.push(`/?page=${page}`);
@@ -81,7 +55,7 @@ export default function HomePage() {
       <PaginationItem key="first">
         <PaginationLink
           href={`/?page=1`}
-          isActive={currentPage === 1}
+          isActive={currentPageParam === 1}
           onClick={(e) => {
             e.preventDefault();
             handlePageChange(1);
@@ -92,7 +66,7 @@ export default function HomePage() {
       </PaginationItem>
     );
 
-    if (currentPage > 3) {
+    if (currentPageParam > 3) {
       items.push(
         <PaginationItem key="ellipsis-1">
           <PaginationEllipsis />
@@ -101,8 +75,8 @@ export default function HomePage() {
     }
 
     for (
-      let i = Math.max(2, currentPage - 1);
-      i <= Math.min(totalPages - 1, currentPage + 1);
+      let i = Math.max(2, currentPageParam - 1);
+      i <= Math.min(totalPages - 1, currentPageParam + 1);
       i++
     ) {
       if (i === 1 || i === totalPages) continue;
@@ -110,7 +84,7 @@ export default function HomePage() {
         <PaginationItem key={i}>
           <PaginationLink
             href={`/?page=${i}`}
-            isActive={currentPage === i}
+            isActive={currentPageParam === i}
             onClick={(e) => {
               e.preventDefault();
               handlePageChange(i);
@@ -122,7 +96,7 @@ export default function HomePage() {
       );
     }
 
-    if (currentPage < totalPages - 2) {
+    if (currentPageParam < totalPages - 2) {
       items.push(
         <PaginationItem key="ellipsis-2">
           <PaginationEllipsis />
@@ -135,7 +109,7 @@ export default function HomePage() {
         <PaginationItem key="last">
           <PaginationLink
             href={`/?page=${totalPages}`}
-            isActive={currentPage === totalPages}
+            isActive={currentPageParam === totalPages}
             onClick={(e) => {
               e.preventDefault();
               handlePageChange(totalPages);
@@ -237,32 +211,34 @@ export default function HomePage() {
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
-                  href={`/?page=${Math.max(1, currentPage - 1)}`}
+                  href={`/?page=${Math.max(1, currentPageParam - 1)}`}
                   onClick={(e) => {
                     e.preventDefault();
-                    if (currentPage > 1) {
-                      handlePageChange(currentPage - 1);
+                    if (currentPageParam > 1) {
+                      handlePageChange(currentPageParam - 1);
                     }
                   }}
-                  aria-disabled={currentPage <= 1}
+                  aria-disabled={currentPageParam <= 1}
                   className={
-                    currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                    currentPageParam <= 1
+                      ? "pointer-events-none opacity-50"
+                      : ""
                   }
                 />
               </PaginationItem>
               {renderPaginationItems()}
               <PaginationItem>
                 <PaginationNext
-                  href={`/?page=${Math.min(totalPages, currentPage + 1)}`}
+                  href={`/?page=${Math.min(totalPages, currentPageParam + 1)}`}
                   onClick={(e) => {
                     e.preventDefault();
-                    if (currentPage < totalPages) {
-                      handlePageChange(currentPage + 1);
+                    if (currentPageParam < totalPages) {
+                      handlePageChange(currentPageParam + 1);
                     }
                   }}
-                  aria-disabled={currentPage >= totalPages}
+                  aria-disabled={currentPageParam >= totalPages}
                   className={
-                    currentPage >= totalPages
+                    currentPageParam >= totalPages
                       ? "pointer-events-none opacity-50"
                       : ""
                   }
