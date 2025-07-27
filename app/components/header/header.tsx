@@ -411,7 +411,7 @@ export default function Header() {
                         <Link href="/bookmarks">Bookmarks</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/history">Reading History</Link>
+                        <Link href="/account">Account</Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
