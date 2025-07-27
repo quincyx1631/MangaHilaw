@@ -35,6 +35,7 @@ import SignInModal from "@/app/components/auth/signin";
 import RegisterModal from "@/app/components/auth/register";
 import { useAuth } from "@/context/auth-context";
 import { getStatusText, getStatusColorClass } from "@/app/utils/helpers";
+import { profileService } from "@/lib/profile-service";
 
 export default function Header() {
   const pathname = usePathname();
@@ -49,6 +50,7 @@ export default function Header() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchMobileContainerRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
   const fetchSearchResults = useCallback(async (query: string) => {
     setIsLoading(true);
@@ -104,6 +106,21 @@ export default function Header() {
       setShowResults(false);
     }
   }, [pathname]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      profileService
+        .getProfile()
+        .then((profile) => {
+          setAvatarUrl(profile.avatar_url);
+        })
+        .catch(() => {
+          setAvatarUrl(undefined);
+        });
+    } else {
+      setAvatarUrl(undefined);
+    }
+  }, [isAuthenticated]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -269,7 +286,7 @@ export default function Header() {
           <div className="flex items-center justify-between gap-2">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0">
-              <Book className="h-5 w-5 text-primary" />
+              <img src="/logo.png" alt="MangaHilaw" className="h-12 w-12" />
               <span className="font-bold text-lg text-primary">MangaHilaw</span>
             </Link>
 
@@ -387,7 +404,17 @@ export default function Header() {
                     size="sm"
                     className="h-9 px-2 md:px-3"
                   >
-                    <User className="h-4 w-4 md:mr-2" />
+                    {avatarUrl ? (
+                      <Image
+                        src={avatarUrl}
+                        alt="User avatar"
+                        width={24}
+                        height={24}
+                        className="rounded-full h-6 w-6 object-cover mr-2 border"
+                      />
+                    ) : (
+                      <User className="h-4 w-4 md:mr-2" />
+                    )}
                     <span className="hidden sm:inline ml-1 md:ml-0">
                       {isAuthenticated
                         ? user?.username || "Account"
@@ -400,7 +427,17 @@ export default function Header() {
                   {isAuthenticated ? (
                     <>
                       <DropdownMenuItem className="font-medium">
-                        <User className="mr-2 h-4 w-4" />
+                        {avatarUrl ? (
+                          <Image
+                            src={avatarUrl}
+                            alt="User avatar"
+                            width={24}
+                            height={24}
+                            className="rounded-full h-6 w-6 object-cover mr-2 border"
+                          />
+                        ) : (
+                          <User className="h-4 w-4 md:mr-2" />
+                        )}
                         <span>{user?.username}</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
