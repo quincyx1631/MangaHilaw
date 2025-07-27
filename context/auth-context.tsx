@@ -43,30 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    const initializeAuth = () => {
-      try {
-        const token = localStorage.getItem("token");
-        const userString = localStorage.getItem("user");
-
-        if (token && userString) {
-          const user = JSON.parse(userString) as User;
-          setState({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-          });
-        } else {
-          setState((prev) => ({ ...prev, isLoading: false }));
-        }
-      } catch (error) {
-        console.error("Error initializing auth state:", error);
-        setState((prev) => ({ ...prev, isLoading: false }));
-      }
-    };
-
-    initializeAuth();
+    setState((prev) => ({ ...prev, isLoading: false }));
   }, []);
 
   useEffect(() => {
@@ -101,7 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const response = await axiosInstance.post<AuthResponse>(
           "/auth/login",
-          credentials
+          credentials,
+          { withCredentials: true }
         );
 
         if (!response.data.success) {
@@ -109,16 +87,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         const { data } = response.data;
-        if (!data || !data.session?.access_token || !data.user) {
+        if (!data || !data.user) {
           throw new Error("Invalid response from server");
         }
 
-        localStorage.setItem("token", data.session.access_token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
         setState({
           user: data.user,
-          token: data.session.access_token,
+          token: null,
           isAuthenticated: true,
           isLoading: false,
           error: null,
@@ -222,7 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
-      await axiosInstance.post("/auth/logout");
+      await axiosInstance.post("/auth/logout", {}, { withCredentials: true });
       const username = state.user?.username || state.user?.email || "user";
       toast({
         title: "Logged out",
@@ -238,9 +213,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         variant: "default",
       });
     } finally {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-
       setState({
         user: null,
         token: null,
@@ -248,7 +220,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoading: false,
         error: null,
       });
-
       router.push("/");
     }
   }, [router, state.user, toast]);

@@ -8,14 +8,12 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
   },
   timeout: 10000,
+  withCredentials: true,
 })
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+    // No Authorization header, no localStorage
     return config
   },
   (error) => {
@@ -28,9 +26,6 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       if (typeof window !== "undefined") {
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
-
         window.dispatchEvent(new CustomEvent("auth-logout"))
       }
     }
