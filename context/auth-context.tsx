@@ -9,7 +9,7 @@ import {
   useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
-import axiosInstance from "@/lib/axios";
+import axiosInstance, { silentAxiosInstance } from "@/lib/axios";
 import axios from "axios";
 import type {
   AuthState,
@@ -43,9 +43,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simply set loading to false - no automatic auth check
-    setState((prev) => ({ ...prev, isLoading: false }));
+    checkAuthStatus();
   }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      // Use silent axios instance - no console errors, no interceptors
+      const response = await silentAxiosInstance.get<AuthResponse>("/auth/me", {
+        withCredentials: true,
+      });
+
+      if (response.data.success && response.data.data.user) {
+        setState({
+          user: response.data.data.user,
+          token: null,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+      } else {
+        setState((prev) => ({ ...prev, isLoading: false }));
+      }
+    } catch (error) {
+      setState((prev) => ({ ...prev, isLoading: false }));
+    }
+  };
 
   useEffect(() => {
     const handleForcedLogout = () => {
@@ -77,11 +99,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
+        console.log("🚀 Attempting login...");
         const response = await axiosInstance.post<AuthResponse>(
           "/auth/login",
           credentials,
           { withCredentials: true }
         );
+
+        console.log("📝 Login response:", response.data);
+        console.log("🍪 Response headers:", response.headers);
 
         if (!response.data.success) {
           throw new Error(response.data.message || "Login failed");
@@ -99,6 +125,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           isLoading: false,
           error: null,
         });
+
+        console.log("✅ Login successful, user state updated");
 
         toast({
           title: "Login successful",

@@ -2,6 +2,15 @@ import axios from "axios"
 
 const baseURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:5000/api";
 
+const silentAxiosInstance = axios.create({
+  baseURL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  timeout: 10000,
+  withCredentials: true,
+})
+
 const axiosInstance = axios.create({
   baseURL,
   headers: {
@@ -13,7 +22,6 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    // No Authorization header, no localStorage
     return config
   },
   (error) => {
@@ -34,3 +42,4 @@ axiosInstance.interceptors.response.use(
 )
 
 export default axiosInstance
+export { silentAxiosInstance }
