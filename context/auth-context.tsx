@@ -43,8 +43,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    setState((prev) => ({ ...prev, isLoading: false }));
+    checkAuthStatus();
   }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await axiosInstance.get<AuthResponse>("/auth/me", {
+        withCredentials: true,
+      });
+
+      if (response.data.success && response.data.data.user) {
+        setState({
+          user: response.data.data.user,
+          token: null,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
+      } else {
+        setState((prev) => ({ ...prev, isLoading: false }));
+      }
+    } catch (error) {
+      setState((prev) => ({ ...prev, isLoading: false }));
+    }
+  };
 
   useEffect(() => {
     const handleForcedLogout = () => {
