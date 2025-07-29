@@ -63,8 +63,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         setState((prev) => ({ ...prev, isLoading: false }));
       }
-    } catch (error) {
-      setState((prev) => ({ ...prev, isLoading: false }));
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        setState((prev) => ({ ...prev, isLoading: false }));
+      } else {
+        console.error("Auth check error:", error);
+        setState((prev) => ({ ...prev, isLoading: false }));
+      }
     }
   };
 

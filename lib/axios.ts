@@ -25,7 +25,9 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      if (typeof window !== "undefined") {
+      const isAuthCheckEndpoint = error.config?.url?.includes('/auth/me');
+      
+      if (typeof window !== "undefined" && !isAuthCheckEndpoint) {
         window.dispatchEvent(new CustomEvent("auth-logout"))
       }
     }
