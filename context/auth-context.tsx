@@ -9,11 +9,11 @@ import {
   useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
-import axiosInstance, { silentAxiosInstance } from "@/lib/axios";
+import axiosInstance from "@/lib/axios";
+import { secureStorage } from "@/lib/secure-storage";
 import axios from "axios";
 import type {
   AuthState,
-  User,
   LoginCredentials,
   RegisterCredentials,
   AuthResponse,
@@ -48,29 +48,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const checkAuthStatus = async () => {
     try {
-      // Use silent axios instance - no console errors, no interceptors
-      const response = await silentAxiosInstance.get<AuthResponse>("/auth/me", {
-        withCredentials: true,
-      });
+      const token = secureStorage.getToken();
+      const user = secureStorage.getUser();
 
-      if (response.data.success && response.data.data.user) {
+      if (token && user && !secureStorage.isTokenExpired()) {
         setState({
-          user: response.data.data.user,
-          token: null,
+          user,
+          token,
           isAuthenticated: true,
           isLoading: false,
           error: null,
         });
       } else {
+        secureStorage.clear();
         setState((prev) => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
+      secureStorage.clear();
       setState((prev) => ({ ...prev, isLoading: false }));
     }
   };
 
   useEffect(() => {
     const handleForcedLogout = () => {
+      secureStorage.clear();
+
       setState({
         user: null,
         token: null,
@@ -102,25 +104,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log("🚀 Attempting login...");
         const response = await axiosInstance.post<AuthResponse>(
           "/auth/login",
-          credentials,
-          { withCredentials: true }
+          credentials
         );
 
         console.log("📝 Login response:", response.data);
-        console.log("🍪 Response headers:", response.headers);
 
         if (!response.data.success) {
           throw new Error(response.data.message || "Login failed");
         }
 
         const { data } = response.data;
+        console.log("🔍 Response data:", data);
+
         if (!data || !data.user) {
-          throw new Error("Invalid response from server");
+          throw new Error("Invalid response from server - missing user data");
         }
+
+        if (!data.token) {
+          throw new Error("Invalid response from server - missing token");
+        }
+
+        secureStorage.setToken(data.token);
+        secureStorage.setUser(data.user);
 
         setState({
           user: data.user,
-          token: null,
+          token: data.token,
           isAuthenticated: true,
           isLoading: false,
           error: null,
@@ -226,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
-      await axiosInstance.post("/auth/logout", {}, { withCredentials: true });
+      await axiosInstance.post("/auth/logout");
       const username = state.user?.username || state.user?.email || "user";
       toast({
         title: "Logged out",
@@ -242,6 +251,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         variant: "default",
       });
     } finally {
+      // Clear secure storage
+      secureStorage.clear();
+
       setState({
         user: null,
         token: null,

@@ -32,6 +32,7 @@ export interface AuthResponse {
   message: string;
   data: {
     user: User;
+    token?: string;
     session?: {
       access_token: string;
       refresh_token: string;
