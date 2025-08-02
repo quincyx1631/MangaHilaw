@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import ProtectedRoute from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
@@ -8,41 +8,45 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Star, Clock, Heart, Loader2, Edit3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { profileService } from "@/lib/profile-service";
 import ProfileImageUpload from "@/components/profile-image-upload";
+import { useProfileStore } from "@/store/profile-store";
 import type { User as UserType } from "@/app/types/auth";
 
 export default function ProfilePage() {
   const { user: authUser } = useAuth();
   const { toast } = useToast();
-  const [user, setUser] = useState<UserType | null>(authUser);
-  const [isEditing, setIsEditing] = useState(false);
+
+  // Local UI state
   const [isLoading, setIsLoading] = useState(false);
-  const [bio, setBio] = useState(authUser?.bio || "");
-  const [originalBio, setOriginalBio] = useState(authUser?.bio || "");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Zustand store state (only data)
+  const {
+    user,
+    bio,
+    originalBio,
+    stats,
+    setBio,
+    loadProfile,
+    updateProfile,
+    resetEditState,
+    initializeFromAuth,
+  } = useProfileStore();
 
   useEffect(() => {
-    const loadProfile = async () => {
-      if (!authUser) return;
-
-      try {
+    const loadProfileData = async () => {
+      if (authUser) {
         setIsLoading(true);
-        const profileData = await profileService.getProfile();
-        setUser(profileData);
-        setBio(profileData.bio || "");
-        setOriginalBio(profileData.bio || "");
-      } catch (error) {
-        console.error("Failed to load profile:", error);
-        setUser(authUser);
-        setBio("");
-        setOriginalBio("");
-      } finally {
+        await loadProfile(authUser, false);
         setIsLoading(false);
+      } else {
+        initializeFromAuth(null);
       }
     };
 
-    loadProfile();
-  }, [authUser, toast]);
+    loadProfileData();
+  }, [authUser, loadProfile, initializeFromAuth]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -51,33 +55,37 @@ export default function ProfilePage() {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      const updatedProfile = await profileService.updateProfile({
-        username: user.username,
-        bio,
-      });
-      setUser(updatedProfile);
-      setOriginalBio(bio);
+    setIsUpdating(true);
+    const updatedProfile = await updateProfile({
+      username: user.username,
+      bio,
+    });
+    setIsUpdating(false);
+
+    if (updatedProfile) {
       setIsEditing(false);
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated!",
       });
-    } catch (error) {
-      console.error("Failed to update profile:", error);
+    } else {
       toast({
         title: "Update failed",
         description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
+  const handleCancel = () => {
+    resetEditState();
+    setIsEditing(false);
+  };
+
   const handleImageUpdate = (updatedUser: UserType) => {
-    setUser(updatedUser);
+    // This callback is now optional since ProfileImageUpload uses the store directly
+    // But we keep it for backward compatibility
+    console.log("Profile image updated:", updatedUser.username);
   };
 
   if (isLoading && !user) {
@@ -128,7 +136,7 @@ export default function ProfilePage() {
               variant="outline"
               size="sm"
               onClick={() => setIsEditing(true)}
-              disabled={isLoading}
+              disabled={isLoading || isUpdating}
               className="flex items-center gap-2 mx-auto"
             >
               <Edit3 className="h-4 w-4" />
@@ -151,19 +159,16 @@ export default function ProfilePage() {
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setBio(originalBio);
-                      setIsEditing(false);
-                    }}
-                    disabled={isLoading}
+                    onClick={handleCancel}
+                    disabled={isUpdating}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleSaveProfile}
-                    disabled={isLoading || bio === originalBio}
+                    disabled={isUpdating || bio === originalBio}
                   >
-                    {isLoading ? (
+                    {isUpdating ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
@@ -189,7 +194,9 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-center mb-3">
                   <BookOpen className="h-8 w-8 text-blue-500" />
                 </div>
-                <p className="text-3xl font-bold text-blue-500 mb-1">12</p>
+                <p className="text-3xl font-bold text-blue-500 mb-1">
+                  {stats.currentlyReading}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Currently Reading
                 </p>
@@ -202,7 +209,9 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-center mb-3">
                   <Star className="h-8 w-8 text-green-500" />
                 </div>
-                <p className="text-3xl font-bold text-green-500 mb-1">45</p>
+                <p className="text-3xl font-bold text-green-500 mb-1">
+                  {stats.completed}
+                </p>
                 <p className="text-sm text-muted-foreground">Completed</p>
               </CardContent>
             </Card>
@@ -213,7 +222,9 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-center mb-3">
                   <Clock className="h-8 w-8 text-orange-500" />
                 </div>
-                <p className="text-3xl font-bold text-orange-500 mb-1">23</p>
+                <p className="text-3xl font-bold text-orange-500 mb-1">
+                  {stats.planToRead}
+                </p>
                 <p className="text-sm text-muted-foreground">Plan to Read</p>
               </CardContent>
             </Card>
@@ -224,7 +235,9 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-center mb-3">
                   <Heart className="h-8 w-8 text-red-500" />
                 </div>
-                <p className="text-3xl font-bold text-red-500 mb-1">8</p>
+                <p className="text-3xl font-bold text-red-500 mb-1">
+                  {stats.favorites}
+                </p>
                 <p className="text-sm text-muted-foreground">Favorites</p>
               </CardContent>
             </Card>

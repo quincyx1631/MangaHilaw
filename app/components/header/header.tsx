@@ -35,7 +35,7 @@ import SignInModal from "@/app/components/auth/signin";
 import RegisterModal from "@/app/components/auth/register";
 import { useAuth } from "@/context/auth-context";
 import { getStatusText, getStatusColorClass } from "@/app/utils/helpers";
-import { profileService } from "@/lib/profile-service";
+import { useProfileStore } from "@/store/profile-store";
 
 export default function Header() {
   const pathname = usePathname();
@@ -50,7 +50,20 @@ export default function Header() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchMobileContainerRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+
+  // Use profile store instead of local state
+  const { user: profileUser, loadProfile } = useProfileStore();
+
+  // Load profile when authentication status changes
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Use the store's loadProfile method which has caching
+      loadProfile(user, false); // false = don't force refresh, use cache if valid
+    }
+  }, [isAuthenticated, user, loadProfile]);
+
+  // Get avatar from the store
+  const avatarUrl = profileUser?.avatar_url;
 
   const fetchSearchResults = useCallback(async (query: string) => {
     setIsLoading(true);
@@ -106,21 +119,6 @@ export default function Header() {
       setShowResults(false);
     }
   }, [pathname]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      profileService
-        .getProfile()
-        .then((profile) => {
-          setAvatarUrl(profile.avatar_url);
-        })
-        .catch(() => {
-          setAvatarUrl(undefined);
-        });
-    } else {
-      setAvatarUrl(undefined);
-    }
-  }, [isAuthenticated]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);

@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { profileService } from "@/lib/profile-service";
+import { useProfileStore } from "@/store/profile-store";
 import type { User } from "@/app/types/auth";
 
 interface ProfileImageUploadProps {
   user: User;
-  onImageUpdate: (user: User) => void;
+  onImageUpdate?: (user: User) => void; // Make optional since we're using store
   className?: string;
 }
 
@@ -19,11 +19,14 @@ export default function ProfileImageUpload({
   onImageUpdate,
   className = "",
 }: ProfileImageUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Use profile store for API calls
+  const { uploadProfileImage, deleteProfileImage } = useProfileStore();
 
   const handleFileSelect = useCallback(
     async (file: File) => {
@@ -54,28 +57,28 @@ export default function ProfileImageUpload({
       };
       reader.readAsDataURL(file);
 
-      // Upload file
+      // Upload file using store
       setIsUploading(true);
-      try {
-        const result = await profileService.uploadProfileImage(file);
-        onImageUpdate(result.profile);
+      const result = await uploadProfileImage(file);
+      setIsUploading(false);
+
+      if (result) {
+        // Call the optional callback for backward compatibility
+        onImageUpdate?.(result.profile);
         toast({
           title: "Profile image updated",
           description: "Your profile picture has been successfully updated!",
         });
-      } catch (error) {
-        console.error("Upload error:", error);
+      } else {
         toast({
           title: "Upload failed",
           description: "Failed to upload image. Please try again.",
           variant: "destructive",
         });
         setPreviewUrl(null);
-      } finally {
-        setIsUploading(false);
       }
     },
-    [onImageUpdate, toast]
+    [uploadProfileImage, onImageUpdate, toast]
   );
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,23 +111,23 @@ export default function ProfileImageUpload({
     if (!user.avatar_url) return;
 
     setIsUploading(true);
-    try {
-      const updatedUser = await profileService.deleteProfileImage();
-      onImageUpdate(updatedUser);
+    const updatedUser = await deleteProfileImage();
+    setIsUploading(false);
+
+    if (updatedUser) {
+      // Call the optional callback for backward compatibility
+      onImageUpdate?.(updatedUser);
       setPreviewUrl(null);
       toast({
         title: "Profile image removed",
         description: "Your profile picture has been removed.",
       });
-    } catch (error) {
-      console.error("Delete error:", error);
+    } else {
       toast({
         title: "Delete failed",
         description: "Failed to remove profile image. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsUploading(false);
     }
   };
 
