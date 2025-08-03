@@ -13,15 +13,11 @@ import { useProfileStore } from "@/store/profile-store";
 import type { User as UserType } from "@/app/types/auth";
 
 export default function ProfilePage() {
-  const { user: authUser } = useAuth();
+  const { user: authUser, isAuthenticated } = useAuth();
   const { toast } = useToast();
-
-  // Local UI state
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  // Zustand store state (only data)
   const {
     user,
     bio,
@@ -31,22 +27,19 @@ export default function ProfilePage() {
     loadProfile,
     updateProfile,
     resetEditState,
-    initializeFromAuth,
   } = useProfileStore();
 
   useEffect(() => {
     const loadProfileData = async () => {
-      if (authUser) {
+      if (authUser && isAuthenticated) {
         setIsLoading(true);
         await loadProfile(authUser, false);
         setIsLoading(false);
-      } else {
-        initializeFromAuth(null);
       }
     };
 
     loadProfileData();
-  }, [authUser, loadProfile, initializeFromAuth]);
+  }, [authUser, isAuthenticated, loadProfile]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -83,10 +76,12 @@ export default function ProfilePage() {
   };
 
   const handleImageUpdate = (updatedUser: UserType) => {
-    // This callback is now optional since ProfileImageUpload uses the store directly
-    // But we keep it for backward compatibility
     console.log("Profile image updated:", updatedUser.username);
   };
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (isLoading && !user) {
     return (

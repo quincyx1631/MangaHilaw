@@ -2,7 +2,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -13,16 +12,11 @@ import {
   ArrowUp,
   Settings,
   MessageSquare,
-  Send,
   Home,
   List,
-  ThumbsUp,
   ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
@@ -45,6 +39,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Chapter, ChapterImage } from "@/app/types/mangaInfo";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useAuth } from "@/context/auth-context";
+import CommentSection from "@/app/components/reader/comment-section";
 
 interface Comment {
   id: string;
@@ -233,13 +228,11 @@ export default function ChapterReader() {
 
         if (mangaData.comic.id && currentChapter) {
           await checkIfBookmarked(mangaData.comic.id.toString());
-
-          // Update reading progress when chapter loads
           setTimeout(() => {
             if (bookmarkId) {
               updateProgress(currentChapter.chap, currentChapter.hid);
             }
-          }, 1000); // Small delay to ensure bookmark check completes
+          }, 1000);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -293,8 +286,6 @@ export default function ChapterReader() {
 
     try {
       const lastReadChapter = bookmarkData?.last_read_chapter;
-
-      // Only update if current chapter is greater than last read chapter
       if (
         !lastReadChapter ||
         parseFloat(chapterNumber) > parseFloat(lastReadChapter)
@@ -305,7 +296,6 @@ export default function ChapterReader() {
           chapterHid
         );
         if (success) {
-          // Update local bookmark data
           setBookmarkData((prev: any) => ({
             ...prev,
             last_read_chapter: chapterNumber,
@@ -322,7 +312,6 @@ export default function ChapterReader() {
       console.error("Failed to update reading progress:", error);
     }
   };
-  // Add this function to check if manga is bookmarked and get bookmark ID
   const checkIfBookmarked = async (mangaId: string) => {
     if (!isAuthenticated) return;
 
@@ -347,11 +336,9 @@ export default function ChapterReader() {
     handleBookmarkCheck();
   }, [mangaInfo, isAuthenticated]);
 
-  // Add another useEffect to update progress when bookmark ID is available
   useEffect(() => {
     const updateInitialProgress = async () => {
       if (bookmarkId && currentChapter) {
-        // Update progress when bookmark ID becomes available
         await updateProgress(currentChapter.chap, currentChapter.hid);
       }
     };
@@ -561,7 +548,7 @@ export default function ChapterReader() {
                               .sort((a, b) => {
                                 const chapA = parseFloat(a.chap) || 0;
                                 const chapB = parseFloat(b.chap) || 0;
-                                return chapB - chapA; // Descending order (newest first)
+                                return chapB - chapA;
                               })
                               .map((chapter) => (
                                 <SelectItem
@@ -698,91 +685,11 @@ export default function ChapterReader() {
         </div>
 
         {/* Comments section */}
-        <div ref={commentsRef} className="mt-12 px-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Comments ({comments.length})
-            </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowComments(!showComments)}
-            >
-              {showComments ? "Hide Comments" : "Show Comments"}
-            </Button>
-          </div>
-
-          {showComments && (
-            <>
-              <form onSubmit={handleSubmitComment} className="mb-6">
-                <div className="flex gap-3">
-                  <Avatar>
-                    <AvatarFallback>U</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <Textarea
-                      placeholder="Add a comment..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      className="mb-2 min-h-[80px]"
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        type="submit"
-                        disabled={!newComment.trim()}
-                        className="flex items-center gap-2"
-                      >
-                        <Send className="h-4 w-4" />
-                        Post Comment
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </form>
-
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <Card key={comment.id}>
-                    <CardContent className="p-4">
-                      <div className="flex gap-3">
-                        <Avatar>
-                          <AvatarFallback>
-                            {comment.username.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                          {comment.avatar && (
-                            <AvatarImage
-                              src={comment.avatar || "/placeholder.svg"}
-                              alt={comment.username}
-                            />
-                          )}
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">{comment.username}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatTimeAgo(comment.timestamp)}
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2"
-                            >
-                              <ThumbsUp className="h-4 w-4 mr-1" />
-                              {comment.likes}
-                            </Button>
-                          </div>
-                          <p className="mt-2 text-sm">{comment.content}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          )}
+        <div ref={commentsRef} className="px-4">
+          <CommentSection
+            mangaId={mangaInfo?.id?.toString() || ""}
+            chapterHid={hid}
+          />
         </div>
       </div>
 

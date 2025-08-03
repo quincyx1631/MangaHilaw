@@ -19,6 +19,7 @@ import type {
   AuthResponse,
 } from "@/app/types/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useProfileStore } from "@/store/profile-store";
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -251,8 +252,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         variant: "default",
       });
     } finally {
-      // Clear secure storage
       secureStorage.clear();
+      useProfileStore.getState().clearProfile();
 
       setState({
         user: null,

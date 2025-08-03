@@ -24,8 +24,6 @@ export default function HomePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentPageParam = Number(searchParams.get("page")) || 1;
-
-  // Zustand store state
   const {
     hotManga,
     hotMangaLoading: loading,
@@ -40,7 +38,6 @@ export default function HomePage() {
   } = useMangaStore();
 
   useEffect(() => {
-    // Track page refresh/initial load
     incrementRefreshCount();
     fetchHotManga(currentPageParam);
   }, [currentPageParam, fetchHotManga, incrementRefreshCount]);

@@ -50,21 +50,14 @@ export default function Header() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchMobileContainerRef = useRef<HTMLDivElement>(null);
   const { user, isAuthenticated, logout } = useAuth();
-
-  // Use profile store instead of local state
   const { user: profileUser, loadProfile } = useProfileStore();
 
-  // Load profile when authentication status changes
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Use the store's loadProfile method which has caching
-      loadProfile(user, false); // false = don't force refresh, use cache if valid
+      loadProfile(user, false);
     }
   }, [isAuthenticated, user, loadProfile]);
-
-  // Get avatar from the store
   const avatarUrl = profileUser?.avatar_url;
-
   const fetchSearchResults = useCallback(async (query: string) => {
     setIsLoading(true);
     try {
@@ -112,7 +105,6 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    // Clear search when navigating to a non-search page
     if (pathname && !pathname.startsWith("/search")) {
       setSearchQuery("");
       setSearchResults([]);

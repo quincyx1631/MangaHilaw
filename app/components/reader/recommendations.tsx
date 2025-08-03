@@ -39,13 +39,9 @@ export function MangaRecommendations({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-
-  // Check if recommendations array is empty or contains no valid items
   if (!recommendations || recommendations.length === 0) {
     return null;
   }
-
-  // Filter out any invalid recommendations (missing relates data)
   const validRecommendations = recommendations.filter(
     (rec) => rec.relates && rec.relates.title && rec.relates.slug
   );
@@ -66,7 +62,7 @@ export function MangaRecommendations({
     if (!scrollContainerRef.current) return;
 
     const container = scrollContainerRef.current;
-    const scrollAmount = 320; // Width of card + gap
+    const scrollAmount = 320;
     const newScrollLeft =
       direction === "left"
         ? container.scrollLeft - scrollAmount
@@ -199,8 +195,6 @@ export function MangaRecommendations({
             </Link>
           ))}
         </div>
-
-        {/* Gradient overlays for scroll indication */}
         {canScrollLeft && (
           <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none z-10" />
         )}

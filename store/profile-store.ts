@@ -16,6 +16,7 @@ interface ProfileState {
   originalBio: string;
   bio: string;
   stats: ProfileStats;
+  currentUserId: string | null; // Add this to track current user
   
   // Cache state
   lastFetchTime: number | null;
@@ -51,10 +52,10 @@ export const useProfileStore = create<ProfileState>()(
   devtools(
     persist(
       (set, get) => ({
-        // Initial state
         user: null,
         originalBio: "",
         bio: "",
+        currentUserId: null,
         stats: {
           currentlyReading: 0,
           completed: 0,
@@ -62,13 +63,15 @@ export const useProfileStore = create<ProfileState>()(
           favorites: 0,
         },
         
-        // Cache state
         lastFetchTime: null,
         cacheHits: 0,
         apiCallCount: 0,
         
-        // Basic setters
-        setUser: (user) => set({ user }, false, 'setUser'),
+        setUser: (user) => set({ 
+          user,
+          currentUserId: user?.id || null
+        }, false, 'setUser'),
+        
         setBio: (bio) => set({ bio }, false, 'setBio'),
         setOriginalBio: (originalBio) => set({ originalBio }, false, 'setOriginalBio'),
         setStats: (newStats) => {
@@ -76,14 +79,28 @@ export const useProfileStore = create<ProfileState>()(
           set({ stats: { ...stats, ...newStats } }, false, 'setStats');
         },
         
-        // API Actions
         loadProfile: async (authUser, forceRefresh = false) => {
-          const { user, lastFetchTime, cacheHits, apiCallCount } = get();
-          const now = Date.now();
-          const cacheValidTime = 30 * 60 * 1000; // 30 minutes
+          const { user, lastFetchTime, cacheHits, apiCallCount, currentUserId } = get();
+          if (authUser && currentUserId && authUser.id !== currentUserId) {
+            console.log("🔄 [Profile] Different user detected, clearing cache");
+            set({
+              user: null,
+              bio: "",
+              originalBio: "",
+              lastFetchTime: null,
+              currentUserId: authUser.id,
+              stats: {
+                currentlyReading: 0,
+                completed: 0,
+                planToRead: 0,
+                favorites: 0,
+              }
+            }, false, 'loadProfile/userChanged');
+          }
           
-          // Check if we have cached data and it's still valid
-          const hasCachedData = user !== null;
+          const now = Date.now();
+          const cacheValidTime = 30 * 60 * 1000; 
+          const hasCachedData = user !== null && user.id === authUser?.id;
           const isCacheValid = lastFetchTime && (now - lastFetchTime) < cacheValidTime;
           
           if (hasCachedData && isCacheValid && !forceRefresh) {
@@ -99,7 +116,8 @@ export const useProfileStore = create<ProfileState>()(
             set({ 
               user: null, 
               bio: "", 
-              originalBio: ""
+              originalBio: "",
+              currentUserId: null
             }, false, 'loadProfile/noAuthUser');
             return null;
           }
@@ -114,6 +132,7 @@ export const useProfileStore = create<ProfileState>()(
               user: profileData,
               bio,
               originalBio: bio,
+              currentUserId: profileData.id,
               apiCallCount: apiCallCount + 1,
               lastFetchTime: now
             }, false, 'loadProfile/success');
@@ -122,13 +141,12 @@ export const useProfileStore = create<ProfileState>()(
             
           } catch (error) {
             console.error("❌ [API] Error fetching profile:", error);
-            
-            // Fallback to auth user data
             const bio = authUser.bio || "";
             set({ 
               user: authUser,
               bio,
-              originalBio: bio
+              originalBio: bio,
+              currentUserId: authUser.id
             }, false, 'loadProfile/fallback');
             
             return authUser;
@@ -152,6 +170,7 @@ export const useProfileStore = create<ProfileState>()(
               user: updatedProfile,
               bio,
               originalBio: bio,
+              currentUserId: updatedProfile.id,
               apiCallCount: apiCallCount + 1,
               lastFetchTime: Date.now()
             }, false, 'updateProfile/success');
@@ -177,6 +196,7 @@ export const useProfileStore = create<ProfileState>()(
               user: result.profile,
               bio,
               originalBio: bio,
+              currentUserId: result.profile.id,
               apiCallCount: apiCallCount + 1,
               lastFetchTime: Date.now()
             }, false, 'uploadProfileImage/success');
@@ -202,6 +222,7 @@ export const useProfileStore = create<ProfileState>()(
               user: updatedProfile,
               bio,
               originalBio: bio,
+              currentUserId: updatedProfile.id,
               apiCallCount: apiCallCount + 1,
               lastFetchTime: Date.now()
             }, false, 'deleteProfileImage/success');
@@ -214,7 +235,6 @@ export const useProfileStore = create<ProfileState>()(
           }
         },
         
-        // Utility actions
         resetEditState: () => {
           const { originalBio } = get();
           set({ 
@@ -223,12 +243,41 @@ export const useProfileStore = create<ProfileState>()(
         },
         
         initializeFromAuth: (authUser: User | null) => {
+          const { currentUserId } = get();
+          
           if (!authUser) {
             set({ 
               user: null, 
               bio: "", 
-              originalBio: ""
+              originalBio: "",
+              currentUserId: null,
+              lastFetchTime: null,
+              stats: {
+                currentlyReading: 0,
+                completed: 0,
+                planToRead: 0,
+                favorites: 0,
+              }
             }, false, 'initializeFromAuth/null');
+            return;
+          }
+          
+          if (currentUserId && authUser.id !== currentUserId) {
+            console.log("🔄 [Profile] User changed, clearing profile data");
+            const bio = authUser.bio || "";
+            set({ 
+              user: authUser,
+              bio,
+              originalBio: bio,
+              currentUserId: authUser.id,
+              lastFetchTime: null,
+              stats: {
+                currentlyReading: 0,
+                completed: 0,
+                planToRead: 0,
+                favorites: 0,
+              }
+            }, false, 'initializeFromAuth/userChanged');
             return;
           }
           
@@ -236,15 +285,18 @@ export const useProfileStore = create<ProfileState>()(
           set({ 
             user: authUser,
             bio,
-            originalBio: bio
+            originalBio: bio,
+            currentUserId: authUser.id
           }, false, 'initializeFromAuth');
         },
         
         clearProfile: () => {
+          console.log("🧹 [Profile] Clearing profile data");
           set({
             user: null,
             bio: "",
             originalBio: "",
+            currentUserId: null,
             lastFetchTime: null,
             stats: {
               currentlyReading: 0,
@@ -270,12 +322,13 @@ export const useProfileStore = create<ProfileState>()(
         },
       }),
       {
-        name: 'profile-storage', // localStorage key
+        name: 'profile-storage', 
         partialize: (state: ProfileState) => ({
           user: state.user,
           bio: state.bio,
           originalBio: state.originalBio,
           stats: state.stats,
+          currentUserId: state.currentUserId,
           lastFetchTime: state.lastFetchTime,
           cacheHits: state.cacheHits,
           apiCallCount: state.apiCallCount,

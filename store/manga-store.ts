@@ -23,7 +23,7 @@ interface MangaState {
   trendingLoading: boolean;
   trendingError: string | null;
   
-  // Manga Info state - NEW
+  // Manga Info state
   mangaInfoCache: Record<string, {
     data: MangaInfo;
     recommendations: Recommendation[];
@@ -32,7 +32,7 @@ interface MangaState {
   mangaInfoLoading: boolean;
   mangaInfoError: string | null;
   
-  // Chapters state - NEW
+  // Chapters state
   chaptersCache: Record<string, {
     data: Chapter[];
     total: number;
@@ -74,13 +74,13 @@ interface MangaState {
   setTrendingLoading: (loading: boolean) => void;
   setTrendingError: (error: string | null) => void;
   
-  // Actions for manga info - NEW
+  // Actions for manga info 
   setMangaInfoLoading: (loading: boolean) => void;
   setMangaInfoError: (error: string | null) => void;
   getMangaInfo: (slug: string) => { data: MangaInfo; recommendations: Recommendation[] } | null;
   fetchMangaInfo: (slug: string, forceRefresh?: boolean) => Promise<{ comic: MangaInfo; recommendations?: Recommendation[] } | null>;
   
-  // Actions for chapters - NEW
+  // Actions for chapters 
   setChaptersLoading: (loading: boolean) => void;
   setChaptersError: (error: string | null) => void;
   getChapters: (mangaHid: string, chapterOrder: 0 | 1) => { data: Chapter[]; total: number } | null;
@@ -207,7 +207,6 @@ export const useMangaStore = create<MangaState>()(
         
         setViewMode: (mode) => set({ viewMode: mode }, false, 'setViewMode'),
   
-  // API functions
   fetchHotManga: async (page, forceRefresh = false) => {
     const { currentPage, itemsPerPage, hotManga, lastFetchTime, cacheHits, apiCallCount } = get();
     const pageToFetch = page || currentPage;
@@ -341,12 +340,10 @@ export const useMangaStore = create<MangaState>()(
     }
   },
   
-  //API functions for manga info and chapters
   fetchMangaInfo: async (slug: string, forceRefresh = false) => {
     const { mangaInfoCache, cacheHits, apiCallCount } = get();
     const now = Date.now();
     
-    // Check cache first
     if (!forceRefresh) {
       const cached = mangaInfoCache[slug];
       if (cached) {
@@ -380,7 +377,6 @@ export const useMangaStore = create<MangaState>()(
       const data: ComicResponse = await response.json();
       console.log("✅ [API] Manga info loaded successfully:", data.comic.title);
       
-      // Cache the response
       const newCache = {
         ...mangaInfoCache,
         [slug]: {
@@ -416,8 +412,6 @@ export const useMangaStore = create<MangaState>()(
     const { chaptersCache, cacheHits, apiCallCount } = get();
     const now = Date.now();
     const cacheKey = `${mangaHid}_${chapterOrder}`;
-    
-    // Check cache first
     if (!forceRefresh) {
       const cached = chaptersCache[cacheKey];
       if (cached) {
@@ -464,7 +458,6 @@ export const useMangaStore = create<MangaState>()(
         };
       }
       
-      // Cache the response
       const newCache = {
         ...chaptersCache,
         [cacheKey]: {
@@ -533,7 +526,7 @@ export const useMangaStore = create<MangaState>()(
   },
 }),
 {
-  name: 'manga-storage', // localStorage key
+  name: 'manga-storage',
   partialize: (state: MangaState) => ({
     hotManga: state.hotManga,
     currentPage: state.currentPage,
